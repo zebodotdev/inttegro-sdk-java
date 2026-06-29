@@ -1,0 +1,19 @@
+# Maven / Gradle
+target/
+.mvn/
+*.log
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Coverage / build
+*.out
+build/
+
+# Workspace
+go.work
