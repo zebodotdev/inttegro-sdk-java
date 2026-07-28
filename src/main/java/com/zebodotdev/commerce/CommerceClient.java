@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -386,13 +387,31 @@ public class CommerceClient {
         if (params instanceof Map<?, ?> map) {
             fields = new HashMap<>();
             for (Map.Entry<?, ?> entry : map.entrySet()) {
-                fields.put(entry.getKey().toString(), entry.getValue());
+                fields.put(entry.getKey().toString(), mutableValue(entry.getValue()));
             }
         } else {
             fields = mapper.convertValue(params, Map.class);
         }
         pruneNulls(fields);
         return fields;
+    }
+
+    private static Object mutableValue(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> copy = new HashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                copy.put(entry.getKey().toString(), mutableValue(entry.getValue()));
+            }
+            return copy;
+        }
+        if (value instanceof List<?> list) {
+            List<Object> copy = new ArrayList<>();
+            for (Object item : list) {
+                copy.add(mutableValue(item));
+            }
+            return copy;
+        }
+        return value;
     }
 
     @SuppressWarnings("unchecked")
