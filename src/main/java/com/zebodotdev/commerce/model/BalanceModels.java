@@ -2,6 +2,7 @@ package com.zebodotdev.commerce.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zebodotdev.commerce.model.CommonModels.Money;
+import java.util.Map;
 
 public class BalanceModels {
     public static class PayoutConfigurationDestination {

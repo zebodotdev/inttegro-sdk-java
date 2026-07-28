@@ -10,7 +10,7 @@ public class ApiException extends Exception {
     private final String url;
     private final String detail;
     private final String fixCode;
-    private final String cause;
+    private final String errorCause;
 
     public ApiException(
             int statusCode,
@@ -29,7 +29,7 @@ public class ApiException extends Exception {
         this.url = url;
         this.detail = detail;
         this.fixCode = fixCode;
-        this.cause = cause;
+        this.errorCause = cause;
     }
 
     public int getStatusCode() {
@@ -56,7 +56,7 @@ public class ApiException extends Exception {
         return fixCode;
     }
 
-    public String getCause() {
-        return cause;
+    public String getErrorCause() {
+        return errorCause;
     }
 }
