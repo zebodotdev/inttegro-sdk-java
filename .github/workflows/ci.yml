@@ -2,18 +2,13 @@ name: Java SDK CI
 
 on:
   push:
-    paths:
-      - "sdks/java/**"
+    branches: [master]
   pull_request:
-    paths:
-      - "sdks/java/**"
+    branches: [master]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sdks/java
 
     steps:
       - name: Checkout
@@ -43,6 +38,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: sdks/java/target/site/jacoco/jacoco.xml
+          file: target/site/jacoco/jacoco.xml
           flags: java
           name: java-sdk
