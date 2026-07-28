@@ -20,6 +20,7 @@ Add to your Maven project:
 import com.zebodotdev.commerce.CommerceClient;
 import com.zebodotdev.commerce.model.CommonModels.*;
 import com.zebodotdev.commerce.model.CustomerModels.*;
+import com.zebodotdev.commerce.model.AppsModels.*;
 import com.zebodotdev.commerce.model.OrderModels.*;
 import com.zebodotdev.commerce.model.PaymentMethodModels.*;
 
@@ -161,6 +162,15 @@ UpdatePriceParams updatePrice = new UpdatePriceParams();
 updatePrice.priceId = createdPrice.id;
 updatePrice.label = "Premium pricing";
 var updatedPrice = client.prices.update(updatePrice).price;
+
+// Apps
+var createdApp = client.apps().create(
+    CreateAppParams.builder().name("My App").build()
+).app;
+var currentApp = client.apps().lookup().app;
+var updatedApp = client.apps().update(
+    UpdateAppParams.builder().alias("my-app").build()
+).app;
 ```
 
 ## Errors

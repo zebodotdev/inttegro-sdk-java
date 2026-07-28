@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.zebodotdev.commerce.model.OrderModels.*;
 import com.zebodotdev.commerce.model.ProductModels.*;
+import com.zebodotdev.commerce.model.AppsModels.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -91,6 +92,28 @@ class CommerceClientTest {
     }
 
     @Test
+    void appsEndpointsMatchSpec() throws Exception {
+        String appBody = "{\"app\":{\"id\":\"app_123\",\"name\":\"My App\",\"created_at\":\"2026-07-10T00:00:00Z\"}}";
+        server.createContext("/apps/create", new JsonHandler(200, appBody));
+        server.createContext("/apps/lookup", new JsonHandler(200, appBody));
+        server.createContext("/apps/update", new JsonHandler(200, appBody));
+        server.start();
+
+        CommerceClient client = new CommerceClient("sk_test_123", baseUrl, null);
+        CreateAppResponse created = client.apps().create(
+                CreateAppParams.builder().name("My App").build()
+        );
+        LookupAppResponse lookedUp = client.apps().lookup();
+        UpdateAppResponse updated = client.apps().update(
+                UpdateAppParams.builder().alias("my-app").build()
+        );
+
+        assertEquals("app_123", created.app.id);
+        assertEquals("app_123", lookedUp.app.id);
+        assertEquals("app_123", updated.app.id);
+    }
+
+    @Test
     void orderDocumentDeliveryEndpointsMatchSpec() throws Exception {
         String deliveryBody = "{\"order\":{\"id\":\"or_123\"},\"delivery\":{\"document_kind\":\"invoice\",\"document_url\":\"https://pages.zebo.dev/invoices/or_123\",\"sent_channels\":[\"sms\"]}}";
         server.createContext("/orders/send_invoice", new JsonHandler(200, deliveryBody));
@@ -133,6 +156,35 @@ class CommerceClientTest {
         client.request("POST", "/orders/new", Map.of("number", "ORDER-1", "idempotency_key", "legacy"), Map.class);
 
         assertFalse(requestBody.get().contains("\"idempotency_key\":\"legacy\""));
+        assertTrue(requestBody.get().contains("\"request_meta\""));
+        assertTrue(UUID_V7_PATTERN.matcher(requestBody.get()).find());
+    }
+
+    @Test
+    void messageTemplatesCreateUsesRequestMetaIdempotencyByDefault() throws Exception {
+        AtomicReference<String> requestBody = new AtomicReference<>();
+        AtomicReference<String> idempotencyHeader = new AtomicReference<>();
+        server.createContext("/message_templates/create", exchange -> {
+            idempotencyHeader.set(exchange.getRequestHeaders().getFirst("Idempotency-Key"));
+            requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            byte[] bytes = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+        server.start();
+
+        CommerceClient client = new CommerceClient("sk_test_123", baseUrl, null);
+        client.messageTemplates().create(Map.of(
+                "name", "welcome_sms",
+                "channel", "sms",
+                "purpose", "marketing",
+                "sms", Map.of("message_template", "Welcome {{name}}")
+        ));
+
+        assertNull(idempotencyHeader.get());
         assertTrue(requestBody.get().contains("\"request_meta\""));
         assertTrue(UUID_V7_PATTERN.matcher(requestBody.get()).find());
     }

@@ -14,7 +14,7 @@ import com.zebodotdev.commerce.model.FinancialModels.*;
 import com.zebodotdev.commerce.model.ScheduleModels.*;
 import com.zebodotdev.commerce.model.BroadcastModels.*;
 import com.zebodotdev.commerce.model.SpecModels.CountriesResponse;
-import com.zebodotdev.commerce.model.PlatformModels.*;
+import com.zebodotdev.commerce.model.AppsModels.*;
 import com.zebodotdev.commerce.model.BalanceModels.*;
 import com.zebodotdev.commerce.model.ProductModels.*;
 import com.zebodotdev.commerce.model.PriceModels.*;
@@ -89,7 +89,7 @@ public class CommerceClient {
     public final ProductsClient products;
     public final PricesClient prices;
     public final SpecClient spec;
-    public final PlatformClient platform;
+    public final AppsClient apps;
     public final BalancesClient balances;
 
     /**
@@ -139,7 +139,7 @@ public class CommerceClient {
         this.products = new ProductsClient(this);
         this.prices = new PricesClient(this);
         this.spec = new SpecClient(this);
-        this.platform = new PlatformClient(this);
+        this.apps = new AppsClient(this);
         this.balances = new BalancesClient(this);
     }
 
@@ -238,13 +238,8 @@ public class CommerceClient {
      */
     public SpecClient spec() { return spec; }
     
-    /**
-     * Access the Platform resource for application, key, and session management.
-     * Platform operations manage your Commerce applications and authentication credentials.
-     *
-     * @return platform client for platform-level operations
-     */
-    public PlatformClient platform() { return platform; }
+    /** Access application creation, lookup, and update operations. */
+    public AppsClient apps() { return apps; }
 
     String getBaseUrl() {
         return baseUrl;
@@ -665,35 +660,35 @@ public class CommerceClient {
         }
 
         public Map<String, Object> create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return create(params, generatedOptions());
+            return create(params, null);
         }
 
         public Map<String, Object> create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/create", params, optionsOrGenerated(options), Map.class);
+            return client.requestWithOptions("POST", "/message_templates/create", params, options, Map.class);
         }
 
         public Map<String, Object> update(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return update(params, generatedOptions());
+            return update(params, null);
         }
 
         public Map<String, Object> update(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/update", params, optionsOrGenerated(options), Map.class);
+            return client.requestWithOptions("POST", "/message_templates/update", params, options, Map.class);
         }
 
         public Map<String, Object> publish(String templateId) throws IOException, InterruptedException, ApiException {
-            return publish(templateId, generatedOptions());
+            return publish(templateId, null);
         }
 
         public Map<String, Object> publish(String templateId, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/publish", Map.of("id", templateId), optionsOrGenerated(options), Map.class);
+            return client.requestWithOptions("POST", "/message_templates/publish", Map.of("id", templateId), options, Map.class);
         }
 
         public Map<String, Object> archive(String templateId) throws IOException, InterruptedException, ApiException {
-            return archive(templateId, generatedOptions());
+            return archive(templateId, null);
         }
 
         public Map<String, Object> archive(String templateId, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/archive", Map.of("id", templateId), optionsOrGenerated(options), Map.class);
+            return client.requestWithOptions("POST", "/message_templates/archive", Map.of("id", templateId), options, Map.class);
         }
 
         public Map<String, Object> lookup(String templateId) throws IOException, InterruptedException, ApiException {
@@ -708,15 +703,6 @@ public class CommerceClient {
             return client.request("POST", "/message_templates/render_preview", params, Map.class);
         }
 
-        private static RequestOptions optionsOrGenerated(RequestOptions options) {
-            return options == null || options.idempotencyKey() == null || options.idempotencyKey().isBlank()
-                    ? generatedOptions()
-                    : options;
-        }
-
-        private static RequestOptions generatedOptions() {
-            return RequestOptions.withIdempotencyKey(UUID.randomUUID().toString());
-        }
     }
 
     private static Path toPath(Object value) {
@@ -1757,56 +1743,23 @@ public class CommerceClient {
         }
     }
 
-    public static class PlatformClient {
+    public static class AppsClient {
         private final CommerceClient client;
-        public PlatformClient(CommerceClient client) { this.client = client; }
+        public AppsClient(CommerceClient client) { this.client = client; }
 
-        /**
-         * Creates a new Commerce application (POST /apps/create).
-         *
-         * <p>Platform-level endpoint for creating application instances. Request and response shapes
-         * are defined by platform requirements.</p>
-         *
-         * @param payload application creation parameters
-         * @return {@link CreateAppResponse} with created application details
-         * @throws IOException if network communication fails
-         * @throws InterruptedException if the request is interrupted
-         * @throws ApiException if creation fails or unauthorized
-         */
-        public CreateAppResponse createApp(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/apps/create", payload, CreateAppResponse.class);
+        /** Creates a Commerce application. */
+        public CreateAppResponse create(CreateAppParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/apps/create", params, CreateAppResponse.class);
         }
 
-        /**
-         * Generates a new API key for an application (POST /keys/generate).
-         *
-         * <p>Platform-level endpoint for API key management. Returns the generated key which should
-         * be stored securely. Keys cannot be retrieved again after generation.</p>
-         *
-         * @param payload key generation parameters including scope and permissions
-         * @return {@link GenerateKeyResponse} with the generated API key
-         * @throws IOException if network communication fails
-         * @throws InterruptedException if the request is interrupted
-         * @throws ApiException if generation fails or unauthorized
-         */
-        public GenerateKeyResponse generateKey(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/keys/generate", payload, GenerateKeyResponse.class);
+        /** Retrieves the application associated with the configured API key. */
+        public LookupAppResponse lookup() throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/apps/lookup", LookupAppParams.builder().build(), LookupAppResponse.class);
         }
 
-        /**
-         * Creates a new session (POST /sessions/new).
-         *
-         * <p>Platform-level endpoint for session management. Used for dashboard and embedded integration
-         * authentication flows.</p>
-         *
-         * @param payload session creation parameters
-         * @return {@link NewSessionResponse} with session details and tokens
-         * @throws IOException if network communication fails
-         * @throws InterruptedException if the request is interrupted
-         * @throws ApiException if creation fails or unauthorized
-         */
-        public NewSessionResponse newSession(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/sessions/new", payload, NewSessionResponse.class);
+        /** Updates one or more attributes of the configured API key's application. */
+        public UpdateAppResponse update(UpdateAppParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/apps/update", params, UpdateAppResponse.class);
         }
     }
 }
