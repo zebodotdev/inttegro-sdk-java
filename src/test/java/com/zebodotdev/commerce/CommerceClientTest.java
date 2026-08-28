@@ -58,7 +58,7 @@ class CommerceClientTest {
                 "/ping",
                 new JsonHandler(
                         400,
-                        "{\"type\":\"invalid_request_parameter\",\"code\":\"invalid_payment_method\",\"url\":\"https://commerce.zebo.dev/e/invalid_payment_method\",\"message\":\"missing\",\"detail\":\"Payment method not supported.\",\"fix_code\":\"change_request_parameters\",\"cause\":\"validation_failure\"}"
+                        "{\"type\":\"invalid_request_parameter\",\"code\":\"invalid_payment_method\",\"url\":\"https://studio.zebo.dev/e/invalid_payment_method\",\"message\":\"missing\",\"detail\":\"Payment method not supported.\",\"fix_code\":\"change_request_parameters\",\"cause\":\"validation_failure\"}"
                 )
         );
         server.start();
