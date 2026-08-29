@@ -115,7 +115,7 @@ class CommerceClientTest {
 
     @Test
     void orderDocumentDeliveryEndpointsMatchSpec() throws Exception {
-        String deliveryBody = "{\"order\":{\"id\":\"or_123\"},\"delivery\":{\"document_kind\":\"invoice\",\"document_url\":\"https://pages.zebo.dev/invoices/or_123\",\"sent_channels\":[\"sms\"]}}";
+        String deliveryBody = "{\"order\":{\"id\":\"or_123\"},\"delivery\":{\"document_kind\":\"invoice\",\"document_url\":\"https://pages.inttegro.com/invoices/or_123\",\"sent_channels\":[\"sms\"]}}";
         server.createContext("/orders/send_invoice", new JsonHandler(200, deliveryBody));
         server.createContext("/orders/send_receipt", new JsonHandler(200, deliveryBody));
         server.start();
@@ -128,7 +128,7 @@ class CommerceClientTest {
                         .build()
         );
         assertEquals("or_123", invoice.order.id);
-        assertEquals("https://pages.zebo.dev/invoices/or_123", invoice.delivery.documentUrl);
+        assertEquals("https://pages.inttegro.com/invoices/or_123", invoice.delivery.documentUrl);
 
         OrderDocumentDeliveryResponse receipt = client.orders().sendReceipt(
                 OrderSendReceiptParams.builder()
