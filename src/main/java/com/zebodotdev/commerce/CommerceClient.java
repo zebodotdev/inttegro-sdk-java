@@ -62,7 +62,7 @@ import java.util.UUID;
      * Thread safety: immutable after construction; share freely across goroutines/threads.</p>
  */
 public class CommerceClient {
-    private static final String DEFAULT_BASE_URL = "https://api.zebo.dev";
+    private static final String DEFAULT_BASE_URL = "https://api.inttegro.com";
     private static final Set<String> NON_IDEMPOTENT_POST_ACTIONS = Set.of(
             "lookup", "page", "settings", "countries", "contents", "balances", "render_preview"
     );
@@ -109,7 +109,7 @@ public class CommerceClient {
      * HttpClient if you need proxy support, custom timeouts, or a shared connection pool.</p>
      *
      * @param apiKey secret key
-     * @param baseUrl override API host (e.g., https://staging-api.zebo.dev)
+     * @param baseUrl override API host (e.g., https://staging-api.inttegro.com)
      * @param httpClient custom HttpClient (optional; pass null to use default)
      */
     public CommerceClient(String apiKey, String baseUrl, HttpClient httpClient) {
