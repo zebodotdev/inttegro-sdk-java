@@ -34,6 +34,32 @@ public class PayoutModels {
 
     public static class PayoutPageParams { @JsonProperty("page_number") public Integer pageNumber; @JsonProperty("page_size") public Integer pageSize; }
     public static class CancelPayoutParams { @JsonProperty("payout_id") public String payoutId; }
+    public static class LookupPayoutParams {
+        @JsonProperty("payout_id") public String payoutId;
+
+        public static Builder builder() { return new Builder(); }
+        public static class Builder {
+            private final LookupPayoutParams params = new LookupPayoutParams();
+            public Builder payoutId(String payoutId) { params.payoutId = payoutId; return this; }
+            public LookupPayoutParams build() { return params; }
+        }
+    }
+    public static class SchedulePayoutParams {
+        @JsonProperty("destination_id") public String destinationId;
+        @JsonProperty("execute_after") public String executeAfter;
+        @JsonProperty("max_amount") public Long maxAmount;
+        public String reference;
+
+        public static Builder builder() { return new Builder(); }
+        public static class Builder {
+            private final SchedulePayoutParams params = new SchedulePayoutParams();
+            public Builder destinationId(String destinationId) { params.destinationId = destinationId; return this; }
+            public Builder executeAfter(String executeAfter) { params.executeAfter = executeAfter; return this; }
+            public Builder maxAmount(Long maxAmount) { params.maxAmount = maxAmount; return this; }
+            public Builder reference(String reference) { params.reference = reference; return this; }
+            public SchedulePayoutParams build() { return params; }
+        }
+    }
 
     public static class Payout {
         public String id;
@@ -56,5 +82,6 @@ public class PayoutModels {
     }
 
     public static class PayoutPageResponse { public com.zebodotdev.commerce.model.OrderModels.Page<Payout> page; }
+    public static class PayoutResponse { public Payout payout; }
     public static class CancelPayoutResponse { public Payout payout; }
 }

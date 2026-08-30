@@ -155,6 +155,104 @@ public class PaymentMethodModels {
         public String paymentMethodId;
     }
 
+    public static class PagePaymentMethodsParams {
+        @JsonProperty("customer_id")
+        public String customerId;
+        @JsonProperty("page_number")
+        public Integer pageNumber;
+        @JsonProperty("page_size")
+        public Integer pageSize;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final PagePaymentMethodsParams params = new PagePaymentMethodsParams();
+            public Builder customerId(String customerId) { params.customerId = customerId; return this; }
+            public Builder pageNumber(Integer pageNumber) { params.pageNumber = pageNumber; return this; }
+            public Builder pageSize(Integer pageSize) { params.pageSize = pageSize; return this; }
+            public PagePaymentMethodsParams build() { return params; }
+        }
+    }
+
+    public static class PaymentMethodActionParams {
+        @JsonProperty("payment_method_id")
+        public String paymentMethodId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final PaymentMethodActionParams params = new PaymentMethodActionParams();
+            public Builder paymentMethodId(String paymentMethodId) { params.paymentMethodId = paymentMethodId; return this; }
+            public PaymentMethodActionParams build() { return params; }
+        }
+    }
+
+    public static class PaymentMethodOwnerAddress {
+        public String city;
+        public String country;
+        @JsonProperty("line1")
+        public String line1;
+        @JsonProperty("line2")
+        public String line2;
+        public String name;
+        @JsonProperty("phone_number")
+        public String phoneNumber;
+        @JsonProperty("post_code")
+        public String postCode;
+        public String region;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final PaymentMethodOwnerAddress address = new PaymentMethodOwnerAddress();
+            public Builder city(String city) { address.city = city; return this; }
+            public Builder country(String country) { address.country = country; return this; }
+            public Builder line1(String line1) { address.line1 = line1; return this; }
+            public Builder line2(String line2) { address.line2 = line2; return this; }
+            public Builder name(String name) { address.name = name; return this; }
+            public Builder phoneNumber(String phoneNumber) { address.phoneNumber = phoneNumber; return this; }
+            public Builder postCode(String postCode) { address.postCode = postCode; return this; }
+            public Builder region(String region) { address.region = region; return this; }
+            public PaymentMethodOwnerAddress build() { return address; }
+        }
+    }
+
+    public static class PaymentMethodOwner {
+        public String name;
+        public PaymentMethodOwnerAddress address;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final PaymentMethodOwner owner = new PaymentMethodOwner();
+            public Builder name(String name) { owner.name = name; return this; }
+            public Builder address(PaymentMethodOwnerAddress address) { owner.address = address; return this; }
+            public PaymentMethodOwner build() { return owner; }
+        }
+    }
+
+    public static class UpdatePaymentMethodParams {
+        @JsonProperty("payment_method_id")
+        public String paymentMethodId;
+        @JsonProperty("custom_data")
+        public Map<String, String> customData;
+        public Boolean active;
+        public Boolean archived;
+        public PaymentMethodOwner owner;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final UpdatePaymentMethodParams params = new UpdatePaymentMethodParams();
+            public Builder paymentMethodId(String paymentMethodId) { params.paymentMethodId = paymentMethodId; return this; }
+            public Builder customData(Map<String, String> customData) { params.customData = customData; return this; }
+            public Builder active(Boolean active) { params.active = active; return this; }
+            public Builder archived(Boolean archived) { params.archived = archived; return this; }
+            public Builder owner(PaymentMethodOwner owner) { params.owner = owner; return this; }
+            public UpdatePaymentMethodParams build() { return params; }
+        }
+    }
+
     public static class DeletePaymentMethodParams {
         @JsonProperty("request_meta")
         public RequestMeta requestMeta;
@@ -197,5 +295,17 @@ public class PaymentMethodModels {
 
     public static class PaymentMethodSettingsResponse {
         public PaymentMethodSettings settings;
+    }
+
+    public static class PaymentMethodPage {
+        public Integer number;
+        public Integer size;
+        @JsonProperty("payment_methods")
+        public java.util.List<PaymentMethodObject> paymentMethods;
+    }
+
+    public static class PaymentMethodPageResponse {
+        public PaymentMethodPage page;
+        public Object error;
     }
 }

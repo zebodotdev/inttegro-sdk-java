@@ -19,6 +19,9 @@ import com.zebodotdev.commerce.model.BalanceModels.*;
 import com.zebodotdev.commerce.model.ProductModels.*;
 import com.zebodotdev.commerce.model.PriceModels.*;
 import com.zebodotdev.commerce.model.FileModels.*;
+import com.zebodotdev.commerce.model.FileReferenceModels.*;
+import com.zebodotdev.commerce.model.KeyModels.*;
+import com.zebodotdev.commerce.model.PurchaseIntentModels.*;
 import com.zebodotdev.commerce.model.RequestMeta;
 
 import java.io.IOException;
@@ -83,6 +86,7 @@ public class CommerceClient {
     public final BalanceTransactionsClient balanceTransactions;
     public final FinancialAccountsClient financialAccounts;
     public final FilesClient files;
+    public final FileReferencesClient fileReferences;
     public final FileLinksClient fileLinks;
     public final UploadRequestsClient uploadRequests;
     public final MessageTemplatesClient messageTemplates;
@@ -91,7 +95,9 @@ public class CommerceClient {
     public final PricesClient prices;
     public final SpecClient spec;
     public final AppsClient apps;
+    public final KeysClient keys;
     public final BalancesClient balances;
+    public final PurchaseIntentsClient purchaseIntents;
 
     /**
      * Create a client with the default production base URL.
@@ -133,6 +139,7 @@ public class CommerceClient {
         this.balanceTransactions = new BalanceTransactionsClient(this);
         this.financialAccounts = new FinancialAccountsClient(this);
         this.files = new FilesClient(this);
+        this.fileReferences = new FileReferencesClient(this);
         this.fileLinks = new FileLinksClient(this);
         this.uploadRequests = new UploadRequestsClient(this);
         this.messageTemplates = new MessageTemplatesClient(this);
@@ -141,7 +148,9 @@ public class CommerceClient {
         this.prices = new PricesClient(this);
         this.spec = new SpecClient(this);
         this.apps = new AppsClient(this);
+        this.keys = new KeysClient(this);
         this.balances = new BalancesClient(this);
+        this.purchaseIntents = new PurchaseIntentsClient(this);
     }
 
     // Convenience accessors matching doc samples.
@@ -224,12 +233,14 @@ public class CommerceClient {
      */
     public FinancialAccountsClient financialAccounts() { return financialAccounts; }
     public FilesClient files() { return files; }
+    public FileReferencesClient fileReferences() { return fileReferences; }
     public FileLinksClient fileLinks() { return fileLinks; }
     public UploadRequestsClient uploadRequests() { return uploadRequests; }
     public MessageTemplatesClient messageTemplates() { return messageTemplates; }
     public CustomersClient customers() { return customers; }
     public PricesClient prices() { return prices; }
     public ProductsClient products() { return products; }
+    public PurchaseIntentsClient purchaseIntents() { return purchaseIntents; }
     
     /**
      * Access the Spec resource for retrieving country specifications and payment capabilities.
@@ -241,6 +252,7 @@ public class CommerceClient {
     
     /** Access application creation, lookup, and update operations. */
     public AppsClient apps() { return apps; }
+    public KeysClient keys() { return keys; }
 
     String getBaseUrl() {
         return baseUrl;
@@ -349,6 +361,9 @@ public class CommerceClient {
             } catch (IllegalArgumentException ignored) {
                 return false;
             }
+        }
+        if (path.startsWith("/keys/")) {
+            return false;
         }
         String[] parts = path.replaceAll("^/+|/+$", "").split("/");
         if (parts.length == 0 || parts[parts.length - 1].isEmpty()) {
@@ -624,6 +639,18 @@ public class CommerceClient {
         }
     }
 
+    public static class FileReferencesClient {
+        private final CommerceClient client;
+
+        public FileReferencesClient(CommerceClient client) {
+            this.client = client;
+        }
+
+        public FileReferenceReconcileResponse reconcile(FileReferenceReconcileParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/file_references/reconcile", params, FileReferenceReconcileResponse.class);
+        }
+    }
+
     public static class UploadRequestsClient {
         private final CommerceClient client;
 
@@ -759,6 +786,10 @@ public class CommerceClient {
          * @throws ApiException if the API returns an error (400, 401, 422)
          */
         public CreateOrderResponse create(OrderCreateParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/orders/create", params, CreateOrderResponse.class);
+        }
+
+        public CreateOrderResponse newOrder(OrderCreateParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/orders/new", params, CreateOrderResponse.class);
         }
 
@@ -778,6 +809,10 @@ public class CommerceClient {
             OrderLookupParams p = new OrderLookupParams();
             p.orderId = orderId;
             return client.request("POST", "/orders/lookup", p, LookupOrderResponse.class);
+        }
+
+        public LookupOrderResponse update(OrderUpdateParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/orders/update", params, LookupOrderResponse.class);
         }
 
         /**
@@ -1050,6 +1085,10 @@ public class CommerceClient {
         public BroadcastResponse broadcast(BroadcastChimeParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/chimes/broadcast", params, BroadcastResponse.class);
         }
+
+        public PageChimesResponse page(PageChimesParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/chimes/page", params, PageChimesResponse.class);
+        }
     }
 
     public static class SchedulesClient {
@@ -1278,6 +1317,46 @@ public class CommerceClient {
             return client.request("POST", "/payment_methods/lookup", p, PaymentMethodResponse.class);
         }
 
+        public PaymentMethodPageResponse page(PagePaymentMethodsParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payment_methods/page", params, PaymentMethodPageResponse.class);
+        }
+
+        public PaymentMethodResponse update(UpdatePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payment_methods/update", params, PaymentMethodResponse.class);
+        }
+
+        public PaymentMethodResponse activate(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+            return activate(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
+        }
+
+        public PaymentMethodResponse activate(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payment_methods/activate", params, PaymentMethodResponse.class);
+        }
+
+        public PaymentMethodResponse disactivate(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+            return disactivate(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
+        }
+
+        public PaymentMethodResponse disactivate(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payment_methods/disactivate", params, PaymentMethodResponse.class);
+        }
+
+        public PaymentMethodResponse archive(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+            return archive(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
+        }
+
+        public PaymentMethodResponse archive(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payment_methods/archive", params, PaymentMethodResponse.class);
+        }
+
+        public PaymentMethodResponse unarchive(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+            return unarchive(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
+        }
+
+        public PaymentMethodResponse unarchive(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payment_methods/unarchive", params, PaymentMethodResponse.class);
+        }
+
         /**
          * Deletes a saved payment method (POST /payment_methods/delete).
          *
@@ -1379,6 +1458,10 @@ public class CommerceClient {
             return client.request("POST", "/payouts/disable", new HashMap<>(), PayoutSettingsResponse.class);
         }
 
+        public PayoutSettingsResponse enableAutomatic() throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payouts/enable", new HashMap<>(), PayoutSettingsResponse.class);
+        }
+
         /**
          * Enables foreign exchange conversion for payouts (POST /payouts/enable_fx).
          *
@@ -1428,6 +1511,18 @@ public class CommerceClient {
             return client.request("POST", "/payouts/page", params, PayoutPageResponse.class);
         }
 
+        public PayoutResponse lookup(String payoutId) throws IOException, InterruptedException, ApiException {
+            return lookup(LookupPayoutParams.builder().payoutId(payoutId).build());
+        }
+
+        public PayoutResponse lookup(LookupPayoutParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payouts/lookup", params, PayoutResponse.class);
+        }
+
+        public PayoutResponse schedule(SchedulePayoutParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payouts/schedule", params, PayoutResponse.class);
+        }
+
         /**
          * Cancels a scheduled payout before execution (POST /payouts/cancel).
          *
@@ -1469,6 +1564,14 @@ public class CommerceClient {
          */
         public BalanceTransactionPageResponse page(BalanceTransactionPageParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/balance_transactions/page", params, BalanceTransactionPageResponse.class);
+        }
+
+        public BalanceTransactionResponse lookup(String transactionId) throws IOException, InterruptedException, ApiException {
+            return lookup(BalanceTransactionLookupParams.builder().transactionId(transactionId).build());
+        }
+
+        public BalanceTransactionResponse lookup(BalanceTransactionLookupParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/balance_transactions/lookup", params, BalanceTransactionResponse.class);
         }
     }
 
@@ -1533,6 +1636,11 @@ public class CommerceClient {
             Map<String, String> body = new HashMap<>();
             body.put("account_id", accountId);
             return client.request("POST", "/financial_accounts/lookup", body, FinancialAccountResponse.class);
+        }
+
+        public FinancialAccountResponse reconnect(String accountId) throws IOException, InterruptedException, ApiException {
+            FinancialAccountLookupParams params = FinancialAccountLookupParams.builder().accountId(accountId).build();
+            return client.request("POST", "/financial_accounts/reconnect", params, FinancialAccountResponse.class);
         }
 
         /**
@@ -1736,6 +1844,26 @@ public class CommerceClient {
         public PriceResponse update(UpdatePriceParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/prices/update", params, PriceResponse.class);
         }
+
+        public PriceResponse activate(String priceId) throws IOException, InterruptedException, ApiException {
+            return activate(PriceActionParams.builder().priceId(priceId).build());
+        }
+
+        public PriceResponse activate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/prices/activate", params, PriceResponse.class);
+        }
+
+        public PriceResponse deactivate(String priceId) throws IOException, InterruptedException, ApiException {
+            return deactivate(PriceActionParams.builder().priceId(priceId).build());
+        }
+
+        public PriceResponse deactivate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/prices/deactivate", params, PriceResponse.class);
+        }
+
+        public PricePageResponse page(PagePricesParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/prices/page", params, PricePageResponse.class);
+        }
     }
 
     public static class SpecClient {
@@ -1779,6 +1907,80 @@ public class CommerceClient {
         /** Updates one or more attributes of the configured API key's application. */
         public UpdateAppResponse update(UpdateAppParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/apps/update", params, UpdateAppResponse.class);
+        }
+    }
+
+    public static class KeysClient {
+        private final CommerceClient client;
+        public KeysClient(CommerceClient client) { this.client = client; }
+
+        public GenerateSecretKeyResponse generate(GenerateSecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/keys/generate", params, GenerateSecretKeyResponse.class);
+        }
+
+        public LookupSecretKeyResponse lookup(String secretKeyId) throws IOException, InterruptedException, ApiException {
+            return lookup(LookupSecretKeyParams.builder().secretKeyId(secretKeyId).build());
+        }
+
+        public LookupSecretKeyResponse lookup(LookupSecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/keys/lookup", params, LookupSecretKeyResponse.class);
+        }
+
+        public PageSecretKeysResponse page(PageSecretKeysParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/keys/page", params, PageSecretKeysResponse.class);
+        }
+
+        public UpdateSecretKeyResponse update(UpdateSecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/keys/update", params, UpdateSecretKeyResponse.class);
+        }
+
+        public DestroySecretKeyResponse destroy(String secretKeyId) throws IOException, InterruptedException, ApiException {
+            return destroy(DestroySecretKeyParams.builder().secretKeyId(secretKeyId).build());
+        }
+
+        public DestroySecretKeyResponse destroy(DestroySecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/keys/destroy", params, DestroySecretKeyResponse.class);
+        }
+
+        public SecretKeyUsageResponse usage(String secretKeyId) throws IOException, InterruptedException, ApiException {
+            return usage(SecretKeyUsageParams.builder().secretKeyId(secretKeyId).build());
+        }
+
+        public SecretKeyUsageResponse usage(SecretKeyUsageParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/keys/usage", params, SecretKeyUsageResponse.class);
+        }
+    }
+
+    public static class PurchaseIntentsClient {
+        private final CommerceClient client;
+        public PurchaseIntentsClient(CommerceClient client) { this.client = client; }
+
+        public PurchaseIntentResponse create(CreatePurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/purchase_intents/create", params, PurchaseIntentResponse.class);
+        }
+
+        public PurchaseIntentResponse lookup(String id) throws IOException, InterruptedException, ApiException {
+            return lookup(LookupPurchaseIntentParams.builder().id(id).build());
+        }
+
+        public PurchaseIntentResponse lookup(LookupPurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/purchase_intents/lookup", params, PurchaseIntentResponse.class);
+        }
+
+        public PagePurchaseIntentsResponse page(PagePurchaseIntentsParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/purchase_intents/page", params, PagePurchaseIntentsResponse.class);
+        }
+
+        public PurchaseIntentResponse update(UpdatePurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/purchase_intents/update", params, PurchaseIntentResponse.class);
+        }
+
+        public PurchaseIntentResponse cancel(String id) throws IOException, InterruptedException, ApiException {
+            return cancel(CancelPurchaseIntentParams.builder().id(id).build());
+        }
+
+        public PurchaseIntentResponse cancel(CancelPurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/purchase_intents/cancel", params, PurchaseIntentResponse.class);
         }
     }
 }

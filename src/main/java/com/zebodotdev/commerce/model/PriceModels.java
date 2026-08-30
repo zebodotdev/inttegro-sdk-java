@@ -17,6 +17,19 @@ public class PriceModels {
         public String priceId;
     }
 
+    public static class PriceActionParams {
+        @JsonProperty("price_id")
+        public String priceId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final PriceActionParams params = new PriceActionParams();
+            public Builder priceId(String priceId) { params.priceId = priceId; return this; }
+            public PriceActionParams build() { return params; }
+        }
+    }
+
     public static class UpdatePriceParams {
         @JsonProperty("price_id")
         public String priceId;
@@ -24,6 +37,25 @@ public class PriceModels {
         public String productId;
         public String label;
         public String about;
+    }
+
+    public static class PagePricesParams {
+        @JsonProperty("page_number")
+        public Integer pageNumber;
+        @JsonProperty("page_size")
+        public Integer pageSize;
+        @JsonProperty("product_id")
+        public String productId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final PagePricesParams params = new PagePricesParams();
+            public Builder pageNumber(Integer pageNumber) { params.pageNumber = pageNumber; return this; }
+            public Builder pageSize(Integer pageSize) { params.pageSize = pageSize; return this; }
+            public Builder productId(String productId) { params.productId = productId; return this; }
+            public PagePricesParams build() { return params; }
+        }
     }
 
     public static class PriceNominal {
@@ -49,5 +81,16 @@ public class PriceModels {
 
     public static class PriceResponse {
         public Price price;
+    }
+
+    public static class PricePage {
+        public Integer number;
+        public Integer size;
+        public java.util.List<Price> prices;
+    }
+
+    public static class PricePageResponse {
+        public PricePage page;
+        public Object error;
     }
 }

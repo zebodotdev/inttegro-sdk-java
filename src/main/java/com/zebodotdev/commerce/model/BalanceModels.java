@@ -30,8 +30,24 @@ public class BalanceModels {
         @JsonProperty("page_size") public Integer pageSize;
     }
 
+    public static class BalanceTransactionLookupParams {
+        @JsonProperty("transaction_id") public String transactionId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final BalanceTransactionLookupParams params = new BalanceTransactionLookupParams();
+            public Builder transactionId(String transactionId) { params.transactionId = transactionId; return this; }
+            public BalanceTransactionLookupParams build() { return params; }
+        }
+    }
+
     public static class BalanceTransactionPageResponse {
         public com.zebodotdev.commerce.model.OrderModels.Page<BalanceTransaction> page;
+    }
+
+    public static class BalanceTransactionResponse {
+        public BalanceTransaction transaction;
     }
 
     public static class BalanceAmount {

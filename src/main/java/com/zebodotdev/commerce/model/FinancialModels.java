@@ -104,6 +104,18 @@ public class FinancialModels {
         @JsonProperty("unset_as_payout_destination") public Boolean unsetAsPayoutDestination;
     }
 
+    public static class FinancialAccountLookupParams {
+        @JsonProperty("account_id") public String accountId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final FinancialAccountLookupParams params = new FinancialAccountLookupParams();
+            public Builder accountId(String accountId) { params.accountId = accountId; return this; }
+            public FinancialAccountLookupParams build() { return params; }
+        }
+    }
+
     public static class FinancialAccountResponse { public FinancialAccount account; }
 
     public static class PageFinancialAccountsParams {
