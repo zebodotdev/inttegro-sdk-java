@@ -13,6 +13,20 @@ public class BroadcastModels {
         public String purpose;
         @JsonProperty("preferred_gateway") public String preferredGateway;
         @JsonProperty("idempotency_key") public String idempotencyKey;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final BroadcastChimeParams params = new BroadcastChimeParams();
+            public Builder recipients(List<String> recipients) { params.recipients = recipients; return this; }
+            public Builder messageTemplate(String messageTemplate) { params.messageTemplate = messageTemplate; return this; }
+            public Builder serviceName(String serviceName) { params.serviceName = serviceName; return this; }
+            public Builder sender(String sender) { params.sender = sender; return this; }
+            public Builder purpose(String purpose) { params.purpose = purpose; return this; }
+            public Builder preferredGateway(String preferredGateway) { params.preferredGateway = preferredGateway; return this; }
+            public Builder idempotencyKey(String idempotencyKey) { params.idempotencyKey = idempotencyKey; return this; }
+            public BroadcastChimeParams build() { return params; }
+        }
     }
 
     public static class BroadcastResponse {
@@ -22,8 +36,28 @@ public class BroadcastModels {
         @JsonProperty("queued_at") public String queuedAt;
     }
 
-    public static class LookupBroadcastParams { @JsonProperty("broadcast_id") public String broadcastId; }
-    public static class CancelBroadcastParams { @JsonProperty("broadcast_id") public String broadcastId; }
+    public static class LookupBroadcastParams {
+        @JsonProperty("broadcast_id") public String broadcastId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final LookupBroadcastParams params = new LookupBroadcastParams();
+            public Builder broadcastId(String broadcastId) { params.broadcastId = broadcastId; return this; }
+            public LookupBroadcastParams build() { return params; }
+        }
+    }
+    public static class CancelBroadcastParams {
+        @JsonProperty("broadcast_id") public String broadcastId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final CancelBroadcastParams params = new CancelBroadcastParams();
+            public Builder broadcastId(String broadcastId) { params.broadcastId = broadcastId; return this; }
+            public CancelBroadcastParams build() { return params; }
+        }
+    }
 
     public static class BroadcastError {
         public String recipient;

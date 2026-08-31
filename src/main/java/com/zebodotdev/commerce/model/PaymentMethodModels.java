@@ -11,6 +11,8 @@ public class PaymentMethodModels {
         @JsonProperty("account_number")
         public String accountNumber;
 
+        public static Builder builder() { return new Builder(); }
+
         public static class Builder {
             private final MobileMoneyParams params = new MobileMoneyParams();
             public Builder network(String network) { params.network = network; return this; }
@@ -24,6 +26,8 @@ public class PaymentMethodModels {
         @JsonProperty("mobile_money")
         public MobileMoneyParams mobileMoney;
 
+        public static Builder builder() { return new Builder(); }
+
         public static PaymentMethodData mobileMoney(java.util.function.Consumer<MobileMoneyParams.Builder> fn) {
             MobileMoneyParams.Builder b = new MobileMoneyParams.Builder();
             fn.accept(b);
@@ -31,6 +35,13 @@ public class PaymentMethodModels {
             data.type = PaymentMethodType.MOBILE_MONEY;
             data.mobileMoney = b.build();
             return data;
+        }
+
+        public static class Builder {
+            private final PaymentMethodData data = new PaymentMethodData();
+            public Builder type(PaymentMethodType type) { data.type = type; return this; }
+            public Builder mobileMoney(MobileMoneyParams mobileMoney) { data.mobileMoney = mobileMoney; return this; }
+            public PaymentMethodData build() { return data; }
         }
     }
 
@@ -135,6 +146,18 @@ public class PaymentMethodModels {
         public PaymentMethodData paymentMethodData;
         @JsonProperty("verify_immediately")
         public Boolean verifyImmediately;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final TokenizePaymentMethodParams params = new TokenizePaymentMethodParams();
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public Builder customerId(String customerId) { params.customerId = customerId; return this; }
+            public Builder paymentMethodData(PaymentMethodData paymentMethodData) { params.paymentMethodData = paymentMethodData; return this; }
+            public Builder verifyImmediately(Boolean verifyImmediately) { params.verifyImmediately = verifyImmediately; return this; }
+            public Builder verifyImmediately(boolean verifyImmediately) { params.verifyImmediately = verifyImmediately; return this; }
+            public TokenizePaymentMethodParams build() { return params; }
+        }
     }
 
     public static class VerifyPaymentMethodParams {
@@ -142,17 +165,43 @@ public class PaymentMethodModels {
         public RequestMeta requestMeta;
         @JsonProperty("payment_method_id")
         public String paymentMethodId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final VerifyPaymentMethodParams params = new VerifyPaymentMethodParams();
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public Builder paymentMethodId(String paymentMethodId) { params.paymentMethodId = paymentMethodId; return this; }
+            public VerifyPaymentMethodParams build() { return params; }
+        }
     }
 
     public static class ConfirmPaymentMethodVerificationParams {
         @JsonProperty("payment_method_id")
         public String paymentMethodId;
         public String token;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final ConfirmPaymentMethodVerificationParams params = new ConfirmPaymentMethodVerificationParams();
+            public Builder paymentMethodId(String paymentMethodId) { params.paymentMethodId = paymentMethodId; return this; }
+            public Builder token(String token) { params.token = token; return this; }
+            public ConfirmPaymentMethodVerificationParams build() { return params; }
+        }
     }
 
     public static class LookupPaymentMethodParams {
         @JsonProperty("payment_method_id")
         public String paymentMethodId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final LookupPaymentMethodParams params = new LookupPaymentMethodParams();
+            public Builder paymentMethodId(String paymentMethodId) { params.paymentMethodId = paymentMethodId; return this; }
+            public LookupPaymentMethodParams build() { return params; }
+        }
     }
 
     public static class PagePaymentMethodsParams {
@@ -258,6 +307,15 @@ public class PaymentMethodModels {
         public RequestMeta requestMeta;
         @JsonProperty("payment_method_id")
         public String paymentMethodId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final DeletePaymentMethodParams params = new DeletePaymentMethodParams();
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public Builder paymentMethodId(String paymentMethodId) { params.paymentMethodId = paymentMethodId; return this; }
+            public DeletePaymentMethodParams build() { return params; }
+        }
     }
 
     public static class DeletePaymentMethodResponse {

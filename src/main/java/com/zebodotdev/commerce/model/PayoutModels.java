@@ -32,8 +32,30 @@ public class PayoutModels {
 
     public static class PayoutSettingsResponse { public PayoutSettings settings; }
 
-    public static class PayoutPageParams { @JsonProperty("page_number") public Integer pageNumber; @JsonProperty("page_size") public Integer pageSize; }
-    public static class CancelPayoutParams { @JsonProperty("payout_id") public String payoutId; }
+    public static class PayoutPageParams {
+        @JsonProperty("page_number") public Integer pageNumber;
+        @JsonProperty("page_size") public Integer pageSize;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final PayoutPageParams params = new PayoutPageParams();
+            public Builder pageNumber(Integer pageNumber) { params.pageNumber = pageNumber; return this; }
+            public Builder pageSize(Integer pageSize) { params.pageSize = pageSize; return this; }
+            public PayoutPageParams build() { return params; }
+        }
+    }
+    public static class CancelPayoutParams {
+        @JsonProperty("payout_id") public String payoutId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final CancelPayoutParams params = new CancelPayoutParams();
+            public Builder payoutId(String payoutId) { params.payoutId = payoutId; return this; }
+            public CancelPayoutParams build() { return params; }
+        }
+    }
     public static class LookupPayoutParams {
         @JsonProperty("payout_id") public String payoutId;
 

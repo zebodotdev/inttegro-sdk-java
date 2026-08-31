@@ -76,6 +76,14 @@ public class CustomerModels {
     public static class LookupCustomerParams {
         @JsonProperty("customer_id")
         public String customerId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final LookupCustomerParams params = new LookupCustomerParams();
+            public Builder customerId(String customerId) { params.customerId = customerId; return this; }
+            public LookupCustomerParams build() { return params; }
+        }
     }
 
     public static class PageCustomersParams {
@@ -136,6 +144,7 @@ public class CustomerModels {
         public String phoneNumber;
         public String line1;
         public String line2;
+        public String city;
         public String town;
         public String region;
         public String district;
@@ -150,6 +159,7 @@ public class CustomerModels {
             public Builder phoneNumber(String phone) { address.phoneNumber = phone; return this; }
             public Builder line1(String line1) { address.line1 = line1; return this; }
             public Builder line2(String line2) { address.line2 = line2; return this; }
+            public Builder city(String city) { address.city = city; return this; }
             public Builder town(String town) { address.town = town; return this; }
             public Builder region(String region) { address.region = region; return this; }
             public Builder district(String district) { address.district = district; return this; }
@@ -180,5 +190,13 @@ public class CustomerModels {
 
     public static class Shipping {
         public Address address;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final Shipping shipping = new Shipping();
+            public Builder address(Address address) { shipping.address = address; return this; }
+            public Shipping build() { return shipping; }
+        }
     }
 }

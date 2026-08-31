@@ -28,6 +28,19 @@ public class OrderModels {
         @JsonProperty("custom_data")
         public Map<String, String> customData;
         public Money amount;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final FeeLineItem item = new FeeLineItem();
+            public Builder id(String id) { item.id = id; return this; }
+            public Builder label(String label) { item.label = label; return this; }
+            public Builder description(String description) { item.description = description; return this; }
+            public Builder taxCode(String taxCode) { item.taxCode = taxCode; return this; }
+            public Builder customData(Map<String, String> customData) { item.customData = customData; return this; }
+            public Builder amount(Money amount) { item.amount = amount; return this; }
+            public FeeLineItem build() { return item; }
+        }
     }
 
     public static class ShippingLineItem {
@@ -37,6 +50,17 @@ public class OrderModels {
         public String taxCode;
         @JsonProperty("custom_data")
         public Map<String, String> customData;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final ShippingLineItem item = new ShippingLineItem();
+            public Builder id(String id) { item.id = id; return this; }
+            public Builder fee(Money fee) { item.fee = fee; return this; }
+            public Builder taxCode(String taxCode) { item.taxCode = taxCode; return this; }
+            public Builder customData(Map<String, String> customData) { item.customData = customData; return this; }
+            public ShippingLineItem build() { return item; }
+        }
     }
 
     public static class ProductLineItem {
@@ -51,6 +75,8 @@ public class OrderModels {
         public String taxCode;
         @JsonProperty("custom_data")
         public Map<String, String> customData;
+
+        public static Builder builder() { return new Builder(); }
 
         public static class Builder {
             private final ProductLineItem item = new ProductLineItem();
@@ -73,31 +99,54 @@ public class OrderModels {
         public FeeLineItem fee;
         public ShippingLineItem shipping;
 
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderLineItem item = new OrderLineItem();
+            public Builder type(LineItemType type) { item.type = type; return this; }
+            public Builder product(ProductLineItem product) { item.product = product; return this; }
+            public Builder fee(FeeLineItem fee) { item.fee = fee; return this; }
+            public Builder shipping(ShippingLineItem shipping) { item.shipping = shipping; return this; }
+            public OrderLineItem build() { return item; }
+        }
+
+        public static OrderLineItem product(ProductLineItem product) {
+            OrderLineItem li = new OrderLineItem();
+            li.type = LineItemType.PRODUCT;
+            li.product = product;
+            return li;
+        }
+
         public static OrderLineItem product(Consumer<ProductLineItem.Builder> fn) {
             ProductLineItem.Builder b = new ProductLineItem.Builder();
             fn.accept(b);
+            return product(b.build());
+        }
+
+        public static OrderLineItem fee(FeeLineItem fee) {
             OrderLineItem li = new OrderLineItem();
-            li.type = LineItemType.PRODUCT;
-            li.product = b.build();
+            li.type = LineItemType.FEE;
+            li.fee = fee;
             return li;
         }
 
         public static OrderLineItem fee(Consumer<FeeLineItem> fn) {
             FeeLineItem f = new FeeLineItem();
             fn.accept(f);
+            return fee(f);
+        }
+
+        public static OrderLineItem shipping(ShippingLineItem shipping) {
             OrderLineItem li = new OrderLineItem();
-            li.type = LineItemType.FEE;
-            li.fee = f;
+            li.type = LineItemType.SHIPPING;
+            li.shipping = shipping;
             return li;
         }
 
         public static OrderLineItem shipping(Consumer<ShippingLineItem> fn) {
             ShippingLineItem s = new ShippingLineItem();
             fn.accept(s);
-            OrderLineItem li = new OrderLineItem();
-            li.type = LineItemType.SHIPPING;
-            li.shipping = s;
-            return li;
+            return shipping(s);
         }
     }
 
@@ -106,12 +155,31 @@ public class OrderModels {
         public String redirectUrl;
         @JsonProperty("cancel_url")
         public String cancelUrl;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final CheckoutSettings settings = new CheckoutSettings();
+            public Builder redirectUrl(String redirectUrl) { settings.redirectUrl = redirectUrl; return this; }
+            public Builder cancelUrl(String cancelUrl) { settings.cancelUrl = cancelUrl; return this; }
+            public CheckoutSettings build() { return settings; }
+        }
     }
 
     public static class OrderPayoutSettings {
         public OrderPayoutDestination destination;
         @JsonProperty("enable_fx")
         public Boolean enableFX;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderPayoutSettings settings = new OrderPayoutSettings();
+            public Builder destination(OrderPayoutDestination destination) { settings.destination = destination; return this; }
+            public Builder enableFX(Boolean enableFX) { settings.enableFX = enableFX; return this; }
+            public Builder enableFX(boolean enableFX) { settings.enableFX = enableFX; return this; }
+            public OrderPayoutSettings build() { return settings; }
+        }
     }
 
     public static class OrderPayoutDestination {
@@ -119,6 +187,15 @@ public class OrderModels {
         public String financialAccountId;
         @JsonProperty("financial_account_data")
         public OrderPayoutFinancialAccount financialAccountData;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderPayoutDestination destination = new OrderPayoutDestination();
+            public Builder financialAccountId(String financialAccountId) { destination.financialAccountId = financialAccountId; return this; }
+            public Builder financialAccountData(OrderPayoutFinancialAccount financialAccountData) { destination.financialAccountData = financialAccountData; return this; }
+            public OrderPayoutDestination build() { return destination; }
+        }
     }
 
     public static class OrderPayoutFinancialAccount {
@@ -126,18 +203,47 @@ public class OrderModels {
         public OrderPayoutWallet wallet;
         @JsonProperty("bank_account") public FinancialModels.BankAccountConfig bankAccount;
         @JsonProperty("dosh_account") public Map<String, Object> doshAccount;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderPayoutFinancialAccount account = new OrderPayoutFinancialAccount();
+            public Builder type(String type) { account.type = type; return this; }
+            public Builder wallet(OrderPayoutWallet wallet) { account.wallet = wallet; return this; }
+            public Builder bankAccount(FinancialModels.BankAccountConfig bankAccount) { account.bankAccount = bankAccount; return this; }
+            public Builder doshAccount(Map<String, Object> doshAccount) { account.doshAccount = doshAccount; return this; }
+            public OrderPayoutFinancialAccount build() { return account; }
+        }
     }
 
     public static class OrderPayoutWallet {
         public String type;
         @JsonProperty("mobile_money")
         public OrderPayoutMobileMoney mobileMoney;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderPayoutWallet wallet = new OrderPayoutWallet();
+            public Builder type(String type) { wallet.type = type; return this; }
+            public Builder mobileMoney(OrderPayoutMobileMoney mobileMoney) { wallet.mobileMoney = mobileMoney; return this; }
+            public OrderPayoutWallet build() { return wallet; }
+        }
     }
 
     public static class OrderPayoutMobileMoney {
         @JsonProperty("account_number")
         public String accountNumber;
         public String network;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderPayoutMobileMoney mobileMoney = new OrderPayoutMobileMoney();
+            public Builder accountNumber(String accountNumber) { mobileMoney.accountNumber = accountNumber; return this; }
+            public Builder network(String network) { mobileMoney.network = network; return this; }
+            public OrderPayoutMobileMoney build() { return mobileMoney; }
+        }
     }
 
     public static class OrderCreateParams {
@@ -166,6 +272,8 @@ public class OrderModels {
         @JsonProperty("payout_settings")
         public OrderPayoutSettings payoutSettings;
         public String number;
+        @JsonProperty("receipt_number")
+        public String receiptNumber;
         @JsonProperty("line_items")
         public List<OrderLineItem> lineItems;
         @JsonProperty("custom_data")
@@ -192,6 +300,7 @@ public class OrderModels {
             public Builder checkoutSettings(CheckoutSettings settings) { params.checkoutSettings = settings; return this; }
             public Builder payoutSettings(OrderPayoutSettings settings) { params.payoutSettings = settings; return this; }
             public Builder number(String number) { params.number = number; return this; }
+            public Builder receiptNumber(String receiptNumber) { params.receiptNumber = receiptNumber; return this; }
             public Builder lineItem(OrderLineItem item) { this.items.add(item); return this; }
             public Builder customData(Map<String, String> data) { params.customData = data; return this; }
             public Builder billingDetails(BillingDetails details) { params.billingDetails = details; return this; }
@@ -200,7 +309,17 @@ public class OrderModels {
         }
     }
 
-    public static class OrderLookupParams { @JsonProperty("order_id") public String orderId; }
+    public static class OrderLookupParams {
+        @JsonProperty("order_id") public String orderId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderLookupParams params = new OrderLookupParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public OrderLookupParams build() { return params; }
+        }
+    }
     public static class OrderUpdateParams {
         @JsonProperty("order_id") public String orderId;
         @JsonProperty("clear_payment_method") public Boolean clearPaymentMethod;
@@ -239,10 +358,61 @@ public class OrderModels {
         @JsonProperty("payment_method_id") public String paymentMethodId;
         @JsonProperty("payment_method_data") public com.zebodotdev.commerce.model.PaymentMethodModels.PaymentMethodData paymentMethodData;
         @JsonProperty("paid_out_of_band") public Boolean paidOutOfBand;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderPayParams params = new OrderPayParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public Builder paymentMethodId(String paymentMethodId) { params.paymentMethodId = paymentMethodId; return this; }
+            public Builder paymentMethodData(com.zebodotdev.commerce.model.PaymentMethodModels.PaymentMethodData paymentMethodData) { params.paymentMethodData = paymentMethodData; return this; }
+            public Builder paidOutOfBand(Boolean paidOutOfBand) { params.paidOutOfBand = paidOutOfBand; return this; }
+            public Builder paidOutOfBand(boolean paidOutOfBand) { params.paidOutOfBand = paidOutOfBand; return this; }
+            public OrderPayParams build() { return params; }
+        }
     }
-    public static class OrderConfirmParams { @JsonProperty("order_id") public String orderId; @JsonProperty("request_meta") public RequestMeta requestMeta; public String token; }
-    public static class OrderRequestConfirmationParams { @JsonProperty("order_id") public String orderId; @JsonProperty("request_meta") public RequestMeta requestMeta; }
-    public static class OrderFinalizeParams { @JsonProperty("order_id") public String orderId; @JsonProperty("request_meta") public RequestMeta requestMeta; }
+    public static class OrderConfirmParams {
+        @JsonProperty("order_id") public String orderId;
+        @JsonProperty("request_meta") public RequestMeta requestMeta;
+        public String token;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderConfirmParams params = new OrderConfirmParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public Builder token(String token) { params.token = token; return this; }
+            public OrderConfirmParams build() { return params; }
+        }
+    }
+    public static class OrderRequestConfirmationParams {
+        @JsonProperty("order_id") public String orderId;
+        @JsonProperty("request_meta") public RequestMeta requestMeta;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderRequestConfirmationParams params = new OrderRequestConfirmationParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public OrderRequestConfirmationParams build() { return params; }
+        }
+    }
+    public static class OrderFinalizeParams {
+        @JsonProperty("order_id") public String orderId;
+        @JsonProperty("request_meta") public RequestMeta requestMeta;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderFinalizeParams params = new OrderFinalizeParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public OrderFinalizeParams build() { return params; }
+        }
+    }
     public static class OrderSendInvoiceParams {
         @JsonProperty("order_id") public String orderId;
         @JsonProperty("request_meta") public RequestMeta requestMeta;
@@ -267,10 +437,57 @@ public class OrderModels {
             public OrderSendReceiptParams build() { return params; }
         }
     }
-    public static class OrderCompleteParams { @JsonProperty("order_id") public String orderId; @JsonProperty("paid_out_of_band") public Boolean paidOutOfBand; }
-    public static class OrderCancelParams { @JsonProperty("order_id") public String orderId; @JsonProperty("request_meta") public RequestMeta requestMeta; }
-    public static class OrderRefundParams { @JsonProperty("order_id") public String orderId; }
-    public static class OrderPageParams { @JsonProperty("page_number") public Integer pageNumber; @JsonProperty("page_size") public Integer pageSize; }
+    public static class OrderCompleteParams {
+        @JsonProperty("order_id") public String orderId;
+        @JsonProperty("paid_out_of_band") public Boolean paidOutOfBand;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderCompleteParams params = new OrderCompleteParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public Builder paidOutOfBand(Boolean paidOutOfBand) { params.paidOutOfBand = paidOutOfBand; return this; }
+            public Builder paidOutOfBand(boolean paidOutOfBand) { params.paidOutOfBand = paidOutOfBand; return this; }
+            public OrderCompleteParams build() { return params; }
+        }
+    }
+    public static class OrderCancelParams {
+        @JsonProperty("order_id") public String orderId;
+        @JsonProperty("request_meta") public RequestMeta requestMeta;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderCancelParams params = new OrderCancelParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
+            public OrderCancelParams build() { return params; }
+        }
+    }
+    public static class OrderRefundParams {
+        @JsonProperty("order_id") public String orderId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderRefundParams params = new OrderRefundParams();
+            public Builder orderId(String orderId) { params.orderId = orderId; return this; }
+            public OrderRefundParams build() { return params; }
+        }
+    }
+    public static class OrderPageParams {
+        @JsonProperty("page_number") public Integer pageNumber;
+        @JsonProperty("page_size") public Integer pageSize;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final OrderPageParams params = new OrderPageParams();
+            public Builder pageNumber(Integer pageNumber) { params.pageNumber = pageNumber; return this; }
+            public Builder pageSize(Integer pageSize) { params.pageSize = pageSize; return this; }
+            public OrderPageParams build() { return params; }
+        }
+    }
 
     public static class PaymentAttempt {
         @JsonProperty("payment_method_type") public String paymentMethodType;
@@ -339,6 +556,7 @@ public class OrderModels {
         public String id;
         public String status;
         public String number;
+        @JsonProperty("receipt_number") public String receiptNumber;
         @JsonProperty("customer_id") public String customerId;
         public CustomerData customer;
         @JsonProperty("billing_details") public BillingDetails billingDetails;
@@ -390,6 +608,7 @@ public class OrderModels {
 
     public static class OrderSummary {
         public String id;
+        @JsonProperty("receipt_number") public String receiptNumber;
         @JsonProperty("line_item_group") public LineItemGroupSummary lineItemGroup;
         @JsonProperty("initiated_at") public String initiatedAt;
         @JsonProperty("completed_at") public String completedAt;

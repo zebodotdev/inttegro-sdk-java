@@ -5,8 +5,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class ScheduleModels {
-    public static class LookupScheduleParams { @JsonProperty("schedule_id") public String scheduleId; }
-    public static class CancelScheduleParams { @JsonProperty("schedule_id") public String scheduleId; }
+    public static class LookupScheduleParams {
+        @JsonProperty("schedule_id") public String scheduleId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final LookupScheduleParams params = new LookupScheduleParams();
+            public Builder scheduleId(String scheduleId) { params.scheduleId = scheduleId; return this; }
+            public LookupScheduleParams build() { return params; }
+        }
+    }
+    public static class CancelScheduleParams {
+        @JsonProperty("schedule_id") public String scheduleId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final CancelScheduleParams params = new CancelScheduleParams();
+            public Builder scheduleId(String scheduleId) { params.scheduleId = scheduleId; return this; }
+            public CancelScheduleParams build() { return params; }
+        }
+    }
 
     public static class ScheduleError {
         public String recipient;

@@ -10,11 +10,32 @@ public class PriceModels {
         public String about;
         public String currency;
         public Long amount;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final CreatePriceParams params = new CreatePriceParams();
+            public Builder productId(String productId) { params.productId = productId; return this; }
+            public Builder label(String label) { params.label = label; return this; }
+            public Builder about(String about) { params.about = about; return this; }
+            public Builder currency(String currency) { params.currency = currency; return this; }
+            public Builder amount(Long amount) { params.amount = amount; return this; }
+            public Builder amount(long amount) { params.amount = amount; return this; }
+            public CreatePriceParams build() { return params; }
+        }
     }
 
     public static class LookupPriceParams {
         @JsonProperty("price_id")
         public String priceId;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final LookupPriceParams params = new LookupPriceParams();
+            public Builder priceId(String priceId) { params.priceId = priceId; return this; }
+            public LookupPriceParams build() { return params; }
+        }
     }
 
     public static class PriceActionParams {
@@ -37,6 +58,17 @@ public class PriceModels {
         public String productId;
         public String label;
         public String about;
+
+        public static Builder builder() { return new Builder(); }
+
+        public static class Builder {
+            private final UpdatePriceParams params = new UpdatePriceParams();
+            public Builder priceId(String priceId) { params.priceId = priceId; return this; }
+            public Builder productId(String productId) { params.productId = productId; return this; }
+            public Builder label(String label) { params.label = label; return this; }
+            public Builder about(String about) { params.about = about; return this; }
+            public UpdatePriceParams build() { return params; }
+        }
     }
 
     public static class PagePricesParams {

@@ -606,8 +606,16 @@ public class CommerceClient {
             this.client = client;
         }
 
+        public Map<String, Object> create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+            return create(params, null);
+        }
+
         public Map<String, Object> create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
             return client.requestWithOptions("POST", "/file_links/create", params, options, Map.class);
+        }
+
+        public Map<String, Object> create(FileLinkCreateParams params) throws IOException, InterruptedException, ApiException {
+            return create(params, null);
         }
 
         public Map<String, Object> create(FileLinkCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
@@ -630,6 +638,10 @@ public class CommerceClient {
             return client.requestWithOptions("POST", "/file_links/revoke", params, options, Map.class);
         }
 
+        public Map<String, Object> revoke(FileLinkRevokeParams params) throws IOException, InterruptedException, ApiException {
+            return revoke(params, null);
+        }
+
         public Map<String, Object> revoke(FileLinkRevokeParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
             return client.requestWithOptions("POST", "/file_links/revoke", client.toRequestMap(params), options, Map.class);
         }
@@ -648,6 +660,10 @@ public class CommerceClient {
 
         public FileReferenceReconcileResponse reconcile(FileReferenceReconcileParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/file_references/reconcile", params, FileReferenceReconcileResponse.class);
+        }
+
+        public FileReferenceReconcileResponse reconcile(FileReferenceReconcileParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/file_references/reconcile", params, options, FileReferenceReconcileResponse.class);
         }
     }
 
@@ -1258,6 +1274,10 @@ public class CommerceClient {
             return client.request("POST", "/payment_methods/tokenize", params, PaymentMethodResponse.class);
         }
 
+        public PaymentMethodResponse tokenize(TokenizePaymentMethodParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/payment_methods/tokenize", params, options, PaymentMethodResponse.class);
+        }
+
         /**
          * Sends a verification challenge for a saved payment method (POST /payment_methods/verify).
          *
@@ -1323,6 +1343,10 @@ public class CommerceClient {
 
         public PaymentMethodResponse update(UpdatePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/payment_methods/update", params, PaymentMethodResponse.class);
+        }
+
+        public PaymentMethodResponse update(UpdatePaymentMethodParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/payment_methods/update", params, options, PaymentMethodResponse.class);
         }
 
         public PaymentMethodResponse activate(String paymentMethodId) throws IOException, InterruptedException, ApiException {
@@ -1907,6 +1931,10 @@ public class CommerceClient {
         /** Updates one or more attributes of the configured API key's application. */
         public UpdateAppResponse update(UpdateAppParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/apps/update", params, UpdateAppResponse.class);
+        }
+
+        public UpdateAppResponse update(UpdateAppParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/apps/update", params, options, UpdateAppResponse.class);
         }
     }
 
