@@ -1,5 +1,6 @@
 package com.zebodotdev.commerce;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import com.zebodotdev.commerce.model.OrderModels.*;
 import com.zebodotdev.commerce.model.ProductModels.*;
 import com.zebodotdev.commerce.model.AppsModels.*;
+import com.zebodotdev.commerce.model.BalanceModels;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -78,6 +80,33 @@ class CommerceClientTest {
         CommerceClient client = new CommerceClient("sk_test_123", baseUrl, null);
         var resp = client.balances().get();
         assertEquals(1000L, resp.balances.get("ghs").available.amount);
+    }
+
+    @Test
+    void balanceTransactionsDeserializeSemanticSourcesAndOrderEmbedding() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        BalanceModels.BalanceTransaction payment = mapper.readValue(
+                "{\"id\":\"bt_payment\",\"type\":\"payment\",\"payment_id\":\"py_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"GHS\",\"value\":2500},\"created_at\":\"2026-08-31T12:00:00Z\"}",
+                BalanceModels.BalanceTransaction.class
+        );
+        assertEquals(BalanceModels.BalanceTransactionType.PAYMENT, payment.type);
+        assertEquals("py_123", payment.sourceId());
+        assertNull(payment.refundId);
+        assertEquals(2500L, payment.amount.value);
+
+        BalanceModels.BalanceTransaction refund = mapper.readValue(
+                "{\"id\":\"bt_refund\",\"type\":\"refund\",\"refund_id\":\"rf_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"GHS\",\"value\":500},\"created_at\":\"2026-08-31T12:01:00Z\"}",
+                BalanceModels.BalanceTransaction.class
+        );
+        assertEquals(BalanceModels.BalanceTransactionType.REFUND, refund.type);
+        assertEquals("rf_123", refund.sourceId());
+        assertNull(refund.paymentId);
+
+        Order order = mapper.readValue(
+                "{\"id\":\"or_123\",\"payment\":{\"id\":\"py_123\",\"balance_transaction\":{\"id\":\"bt_payment\",\"type\":\"payment\",\"payment_id\":\"py_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"GHS\",\"value\":2500},\"created_at\":\"2026-08-31T12:00:00Z\"}}}",
+                Order.class
+        );
+        assertEquals(BalanceModels.BalanceTransactionType.PAYMENT, order.payment.balanceTransaction.type);
     }
 
     @Test
