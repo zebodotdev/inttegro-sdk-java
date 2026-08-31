@@ -191,3 +191,14 @@ try {
 cd sdks/java
 mvn test
 ```
+
+## API enum values
+
+Use `ApiEnums` constants wherever a model accepts a public enum value:
+
+```java
+import com.zebodotdev.commerce.model.ApiEnums;
+
+String productType = ApiEnums.ProductType.DIGITAL;
+String refundReason = ApiEnums.RefundReason.REQUESTED_BY_CUSTOMER;
+```
