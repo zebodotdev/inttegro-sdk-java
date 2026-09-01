@@ -95,6 +95,16 @@ Java-specific features:
 
 See the [API reference](https://studio.inttegro.com/api-reference) for request fields and lifecycle rules, [errors](https://studio.inttegro.com/errors) for recovery guidance, and [idempotency](https://studio.inttegro.com/idempotency) for safe retries.
 
+## Verify a release
+
+The GitHub release for each version is the canonical record. It contains the exact signed JAR, source JAR, Javadoc JAR, POM, and Maven Central publication bundle, plus SHA-256 checksums and a Sigstore attestation tied to the source commit and release workflow.
+
+```bash
+sha256sum --check SHA256SUMS
+gh attestation verify inttegro-sdk-java-1.0.0.jar \
+  --repo zebodotdev/inttegro-sdk-java
+```
+
 ## Develop
 
 ```bash
