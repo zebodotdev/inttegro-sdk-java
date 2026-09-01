@@ -1,204 +1,102 @@
-# Commerce Java SDK
+# Inttegro Java SDK
 
-Minimal Java client for the Commerce API using only the JDK `HttpClient` and Jackson for JSON.
+The official Java client for building server-side Inttegro integrations.
 
-## Installation
+> **Fastest, most modern path:** connect an agent to [Inttegro MCP](https://studio.inttegro.com/inttegro-mcp) at `https://mcp.inttegro.com`, then ask it to run `design_integration`. It will produce an implementation and test plan for your application. Use this SDK when you are ready to connect that plan to your Java service.
 
-Add to your Maven project:
+All official Inttegro SDKs expose the same API capabilities. This package adds Java-specific builders, models, and HTTP integration.
+
+## Install
+
+Requires Java 17 or newer.
 
 ```xml
 <dependency>
-  <groupId>com.zebodotdev</groupId>
-  <artifactId>commerce-sdk-java</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <groupId>com.inttegro</groupId>
+  <artifactId>inttegro-sdk-java</artifactId>
+  <version>1.0.0</version>
 </dependency>
 ```
 
-## Quickstart
+Store your secret key in the server environment:
+
+```bash
+export INTTEGRO_API_KEY="your_secret_key"
+```
+
+Never put the key in browser code, a mobile app, or source control. The client uses `https://api.inttegro.com` by default.
+
+## Create a hosted checkout
+
+Create and finalize an order, then send the customer to its hosted invoice URL:
 
 ```java
-import com.zebodotdev.commerce.CommerceClient;
-import com.zebodotdev.commerce.model.CommonModels.*;
-import com.zebodotdev.commerce.model.CustomerModels.*;
-import com.zebodotdev.commerce.model.AppsModels.*;
-import com.zebodotdev.commerce.model.OrderModels.*;
-import com.zebodotdev.commerce.model.PaymentMethodModels.*;
+import com.inttegro.inttegro.ApiException;
+import com.inttegro.inttegro.InttegroClient;
+import com.inttegro.inttegro.model.ApiEnums;
+import com.inttegro.inttegro.model.RequestMeta;
+import com.inttegro.inttegro.model.CommonModels.Money;
+import com.inttegro.inttegro.model.CustomerModels.CustomerData;
+import com.inttegro.inttegro.model.OrderModels.CheckoutSettings;
+import com.inttegro.inttegro.model.OrderModels.OrderCreateParams;
+import com.inttegro.inttegro.model.OrderModels.OrderLineItem;
 
-public class Example {
+public class CheckoutExample {
   public static void main(String[] args) throws Exception {
-    CommerceClient client = new CommerceClient(System.getenv("COMMERCE_API_KEY"));
+    InttegroClient inttegro = new InttegroClient(System.getenv("INTTEGRO_API_KEY"));
 
-    OrderPayoutSettings payoutSettings = new OrderPayoutSettings();
-    OrderPayoutDestination destination = new OrderPayoutDestination();
-    destination.financialAccountId = "fa_1234567890abcdef";
-    payoutSettings.destination = destination;
-    payoutSettings.enableFX = false;
+    try {
+      var result = inttegro.orders().create(OrderCreateParams.builder()
+          .requestMeta(RequestMeta.withIdempotencyKey("checkout-cart-123"))
+          .customerData(CustomerData.builder()
+              .name("Akua Mensah")
+              .email("akua@example.com")
+              .phoneNumber("+233544998605")
+              .build())
+          .finalizeOrder(true)
+          .checkoutSettings(CheckoutSettings.builder()
+              .redirectUrl("https://example.com/orders/complete")
+              .cancelUrl("https://example.com/cart")
+              .build())
+          .lineItem(OrderLineItem.product(product -> product
+              .type(ApiEnums.ProductType.DIGITAL)
+              .name("Monthly subscription")
+              .quantity(1)
+              .price(Money.of("ghs", 5000))))
+          .build());
 
-    OrderCreateParams params = OrderCreateParams.builder()
-        .customerData(CustomerData.builder()
-            .name("Akua Mensah")
-            .phoneNumber("+233544998605")
-            .build())
-        .paymentMethodData(PaymentMethodData.mobileMoney(momo -> {
-          momo.issuer("mtn").number("0544998605");
-        }))
-        .lineItem(OrderLineItem.product(prod -> prod
-            .name("Monthly Subscription")
-            .type("digital")
-            .price(Money.of("ghs", 5000))
-            .quantity(1)))
-        .billingDetails(BillingDetails.builder()
-            .name("Akua Mensah")
-            .phoneNumber("+233544998605")
-            .email("akua@example.com")
-            .address(Address.builder()
-                .name("Akua Mensah")
-                .phoneNumber("+233544998605")
-                .line1("23 Adenta High Street")
-                .town("Accra")
-                .country("GH")
-                .build())
-            .build())
-        .payoutSettings(payoutSettings)
-        .executePayment(true)
-        .build();
-
-    var created = client.orders().create(params);
-    System.out.println("Order created: " + created.order.id);
+      if (result.order.invoice == null || result.order.invoice.format == null
+          || result.order.invoice.format.web == null) {
+        throw new IllegalStateException("Order did not include a checkout URL");
+      }
+      System.out.println(result.order.id + " " + result.order.invoice.format.web.url);
+    } catch (ApiException error) {
+      System.err.println(error.getCode() + ": " + error.getDetail());
+      throw error;
+    }
   }
 }
 ```
 
-## Resource snippets
+Amounts use integer minor units: `5000` GHS is GHS 50.00. Reuse the same idempotency key when retrying the same logical write. If you omit one, the SDK generates a UUIDv7 key for mutating calls.
 
-```java
-// Lookup an order
-var order = client.orders.lookup("or_123").order;
+## Work with the API
 
-// Pay with saved method
-OrderPayParams pay = new OrderPayParams();
-pay.orderId = "or_123";
-var payResp = client.orders.pay(pay);
+The SDK covers orders and checkout, customers, products and prices, purchase intents, payment methods, balances, payouts and refunds, notifications, files, application settings, keys, and country specifications. Resource clients use camel-case fields such as `purchaseIntents` and `paymentMethods`.
 
-// Payment methods
-TokenizePaymentMethodParams tok = new TokenizePaymentMethodParams();
-tok.customerId = "cu_123";
-tok.paymentMethodData = pm;
-var saved = client.paymentMethods.tokenize(tok).paymentMethod;
+Java-specific features:
 
-// Chimes
-SendChimeParams ch = new SendChimeParams();
-ch.fullMessage = "Your code is 123456";
-ch.recipient = new ChimeRecipient();
-ch.recipient.type = ChimeRecipientType.PHONE;
-Phone phone = new Phone();
-phone.number = "+233544998605";
-ch.recipient.phone = phone;
-var chime = client.chimes.send(ch).chime;
+- Typed request and response models with fluent builders for common resources.
+- Public constants for API enum values.
+- JDK `HttpClient` transport with Jackson response mapping.
+- An injectable `HttpClient` and base URL for connection pools, proxies, tests, and timeouts.
+- A constructed client is safe to share across threads.
+- Structured `ApiException` fields for status, code, detail, cause, and recovery guidance.
 
-// Schedule a chime
-ScheduleChimeParams sched = new ScheduleChimeParams();
-sched.recipients = List.of("+233544998605", "user@example.com");
-sched.fullMessage = "Reminder: payment due tomorrow";
-sched.sendAfter = "2026-01-18T10:00:00Z";
-sched.senderId = "YourBrand";
-var scheduled = client.chimes.schedule(sched).scheduledChime;
+See the [API reference](https://studio.inttegro.com/api-reference) for request fields and lifecycle rules, [errors](https://studio.inttegro.com/errors) for recovery guidance, and [idempotency](https://studio.inttegro.com/idempotency) for safe retries.
 
-// Broadcast a chime
-BroadcastChimeParams bcast = new BroadcastChimeParams();
-bcast.recipients = List.of("+233544998605", "user@example.com");
-bcast.messageTemplate = "Hello! Check out our new product launch.";
-bcast.serviceName = "MarketingCampaign";
-bcast.sender = "YourBrand";
-var broadcast = client.chimes.broadcast(bcast);
-
-// Lookup/cancel schedules and broadcasts
-var scheduleInfo = client.schedules.lookup("sch_abc123def456ghi789").scheduledChime;
-var canceledSchedule = client.schedules.cancel("sch_abc123def456ghi789").scheduledChime;
-var broadcastInfo = client.broadcasts.lookup("brc_abc123def456ghi789").broadcast;
-var canceledBroadcast = client.broadcasts.cancel("brc_abc123def456ghi789").broadcast;
-
-// Payout settings
-var settings = client.payouts.setDestinations(Map.of("ghs", "fa_123")).settings;
-var canceledPayout = client.payouts.cancel("po_123").payout;
-
-// Countries
-var countries = client.spec.countries().countries;
-
-// Customers
-CreateCustomerParams cust = new CreateCustomerParams();
-cust.name = "Jane Doe";
-cust.emailAddress = "jane@example.com";
-cust.phoneNumber = "+233501234567";
-var customer = client.customers.create(cust).customer;
-
-var existing = client.customers.lookup("cu_123").customer;
-var customerPage = client.customers.page(new PageCustomersParams()).page;
-
-// Products
-CreateProductParams prod = new CreateProductParams();
-prod.type = "physical";
-prod.name = "Premium Cotton T-Shirt";
-var createdProduct = client.products.create(prod).product;
-
-AddProductPriceParams productPrice = new AddProductPriceParams();
-productPrice.productId = createdProduct.id;
-productPrice.amount = new ProductPriceAmount();
-productPrice.amount.currency = "ghs";
-productPrice.amount.value = 5000L;
-productPrice.setAsDefault = true;
-client.products.addPrice(productPrice);
-
-var productPage = client.products.page(new PageProductsParams()).page;
-var published = client.products.publish(createdProduct.id).product;
-
-// Prices
-CreatePriceParams price = new CreatePriceParams();
-price.currency = "USD";
-price.amount = 1999L;
-price.label = "Standard pricing";
-var createdPrice = client.prices.create(price).price;
-UpdatePriceParams updatePrice = new UpdatePriceParams();
-updatePrice.priceId = createdPrice.id;
-updatePrice.label = "Premium pricing";
-var updatedPrice = client.prices.update(updatePrice).price;
-
-// Apps
-var createdApp = client.apps().create(
-    CreateAppParams.builder().name("My App").build()
-).app;
-var currentApp = client.apps().lookup().app;
-var updatedApp = client.apps().update(
-    UpdateAppParams.builder().alias("my-app").build()
-).app;
-```
-
-## Errors
-
-API errors throw `ApiException` with status code and error code/message:
-
-```java
-try {
-  client.orders.lookup("bad");
-} catch (ApiException e) {
-  System.err.println(e.getStatusCode() + " " + e.getMessage());
-}
-```
-
-## Testing
+## Develop
 
 ```bash
-cd sdks/java
 mvn test
-```
-
-## API enum values
-
-Use `ApiEnums` constants wherever a model accepts a public enum value:
-
-```java
-import com.zebodotdev.commerce.model.ApiEnums;
-
-String productType = ApiEnums.ProductType.DIGITAL;
-String refundReason = ApiEnums.RefundReason.REQUESTED_BY_CUSTOMER;
 ```
