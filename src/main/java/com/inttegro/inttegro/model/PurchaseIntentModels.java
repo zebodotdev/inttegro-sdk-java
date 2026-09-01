@@ -141,10 +141,7 @@ public class PurchaseIntentModels {
 
     public static class UpdatePurchaseIntentParams {
         public String id;
-        @JsonProperty("minimum_quantity")
-        public Integer minimumQuantity;
-        @JsonProperty("maximum_quantity")
-        public Integer maximumQuantity;
+        public PurchaseIntentQuantity quantity;
         @JsonProperty("expires_at")
         public String expiresAt;
         public Boolean reactivate;
@@ -154,8 +151,7 @@ public class PurchaseIntentModels {
         public static class Builder {
             private final UpdatePurchaseIntentParams params = new UpdatePurchaseIntentParams();
             public Builder id(String id) { params.id = id; return this; }
-            public Builder minimumQuantity(Integer minimumQuantity) { params.minimumQuantity = minimumQuantity; return this; }
-            public Builder maximumQuantity(Integer maximumQuantity) { params.maximumQuantity = maximumQuantity; return this; }
+            public Builder quantity(PurchaseIntentQuantity quantity) { params.quantity = quantity; return this; }
             public Builder expiresAt(String expiresAt) { params.expiresAt = expiresAt; return this; }
             public Builder reactivate(Boolean reactivate) { params.reactivate = reactivate; return this; }
             public UpdatePurchaseIntentParams build() { return params; }
@@ -240,10 +236,7 @@ public class PurchaseIntentModels {
         public String productId;
         @JsonProperty("price_id")
         public String priceId;
-        @JsonProperty("minimum_quantity")
-        public Integer minimumQuantity;
-        @JsonProperty("maximum_quantity")
-        public Integer maximumQuantity;
+        public PurchaseIntentQuantity quantity;
         @JsonProperty("adjustable_quantity")
         public Boolean adjustableQuantity;
         @JsonProperty("allow_variants")

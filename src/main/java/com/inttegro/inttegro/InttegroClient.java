@@ -62,8 +62,8 @@ import java.util.UUID;
      * Transport: JDK {@link java.net.http.HttpClient} (no external HTTP deps) with Jackson for JSON.<br/>
      * Auth: {@code Authorization: Bearer <key>} on every request.<br/>
      * Timeout: 30s default; supply your own HttpClient to change.<br/>
-     * Thread safety: immutable after construction; share freely across goroutines/threads.</p>
- */
+     * Thread safety: immutable after construction; share freely across goroutines/threads.
+     */
 public class InttegroClient {
     public static final String VERSION = "1.0.0";
 
