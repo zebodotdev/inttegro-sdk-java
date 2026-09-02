@@ -16,7 +16,7 @@ Requires Java 17 or newer.
 <dependency>
   <groupId>com.inttegro</groupId>
   <artifactId>inttegro-sdk-java</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
@@ -127,7 +127,7 @@ The GitHub release for each version is the canonical record. It contains the exa
 
 ```bash
 sha256sum --check SHA256SUMS
-gh attestation verify inttegro-sdk-java-1.0.0.jar \
+gh attestation verify inttegro-sdk-java-2.0.0.jar \
   --repo zebodotdev/inttegro-sdk-java
 ```
 
