@@ -65,7 +65,7 @@ import java.util.UUID;
      * Thread safety: immutable after construction; share freely across goroutines/threads.
      */
 public class Client {
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "2.0.0";
 
     private static final String DEFAULT_BASE_URL = "https://api.inttegro.com";
     private static final String USER_AGENT = "inttegro-sdk-java/" + VERSION;
@@ -712,6 +712,22 @@ public class Client {
 
         public Map<String, Object> cancel(UploadRequestCancelParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
             return client.requestWithOptions("POST", "/upload_requests/cancel", client.toRequestMap(params), options, Map.class);
+        }
+
+        public Map<String, Object> review(ReviewUploadRequestAttemptByIdParams params) throws IOException, InterruptedException, ApiException {
+            return review(params, null);
+        }
+
+        public Map<String, Object> review(ReviewUploadRequestAttemptByIdParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/upload_requests/review", client.toRequestMap(params), options, Map.class);
+        }
+
+        public Map<String, Object> review(ReviewUploadRequestAttemptByOrdinalParams params) throws IOException, InterruptedException, ApiException {
+            return review(params, null);
+        }
+
+        public Map<String, Object> review(ReviewUploadRequestAttemptByOrdinalParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/upload_requests/review", client.toRequestMap(params), options, Map.class);
         }
 
         public Map<String, Object> fulfill(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
@@ -1862,6 +1878,10 @@ public class Client {
             return client.request("POST", "/customers/lookup", p, CustomerResponse.class);
         }
 
+        public CustomerResponse update(UpdateCustomerParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/customers/update", params, CustomerResponse.class);
+        }
+
         public CustomersPageResponse page(PageCustomersParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/customers/page", params, CustomersPageResponse.class);
         }
@@ -1954,6 +1974,14 @@ public class Client {
 
         public PriceResponse deactivate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/prices/deactivate", params, PriceResponse.class);
+        }
+
+        public PriceResponse archive(String priceId) throws IOException, InterruptedException, ApiException {
+            return archive(PriceActionParams.builder().priceId(priceId).build());
+        }
+
+        public PriceResponse archive(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/prices/archive", params, PriceResponse.class);
         }
 
         public PricePageResponse page(PagePricesParams params) throws IOException, InterruptedException, ApiException {
