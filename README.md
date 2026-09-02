@@ -6,7 +6,7 @@ The official Java client for building server-side Inttegro integrations.
 
 > **Fastest, most modern path:** connect an agent to [Inttegro MCP](https://studio.inttegro.com/inttegro-mcp) at `https://mcp.inttegro.com`, then ask it to run `design_integration`. It will produce an implementation and test plan for your application. Use this SDK when you are ready to connect that plan to your Java service.
 
-All official Inttegro SDKs expose the same API capabilities. This package adds Java-specific builders, models, and HTTP integration.
+All official Inttegro SDKs expose the same API capabilities. This package adds Java-specific builders, domain types, and HTTP integration.
 
 ## Install
 
@@ -33,22 +33,23 @@ Never put the key in browser code, a mobile app, or source control. The client u
 Create and finalize an order, then send the customer to its hosted invoice URL:
 
 ```java
-import com.inttegro.inttegro.ApiException;
-import com.inttegro.inttegro.InttegroClient;
-import com.inttegro.inttegro.model.ApiEnums;
-import com.inttegro.inttegro.model.RequestMeta;
-import com.inttegro.inttegro.model.CommonModels.Money;
-import com.inttegro.inttegro.model.CustomerModels.CustomerData;
-import com.inttegro.inttegro.model.OrderModels.CheckoutSettings;
-import com.inttegro.inttegro.model.OrderModels.OrderCreateParams;
-import com.inttegro.inttegro.model.OrderModels.OrderLineItem;
+import com.inttegro.ApiException;
+import com.inttegro.Client;
+import com.inttegro.ApiEnums;
+import com.inttegro.RequestMeta;
+import com.inttegro.common.Money;
+import com.inttegro.customers.CustomerData;
+import com.inttegro.orders.CheckoutSettings;
+import com.inttegro.orders.Order;
+import com.inttegro.orders.OrderCreateParams;
+import com.inttegro.orders.OrderLineItem;
 
 public class CheckoutExample {
   public static void main(String[] args) throws Exception {
-    InttegroClient inttegro = new InttegroClient(System.getenv("INTTEGRO_API_KEY"));
+    Client inttegro = new Client(System.getenv("INTTEGRO_API_KEY"));
 
     try {
-      var result = inttegro.orders().create(OrderCreateParams.builder()
+      Order order = inttegro.orders().create(OrderCreateParams.builder()
           .requestMeta(RequestMeta.withIdempotencyKey("checkout-cart-123"))
           .customerData(CustomerData.builder()
               .name("Akua Mensah")
@@ -67,11 +68,10 @@ public class CheckoutExample {
               .price(Money.of("ghs", 5000))))
           .build());
 
-      if (result.order.invoice == null || result.order.invoice.format == null
-          || result.order.invoice.format.web == null) {
+      if (order.invoice == null || order.invoice.format == null || order.invoice.format.web == null) {
         throw new IllegalStateException("Order did not include a checkout URL");
       }
-      System.out.println(result.order.id + " " + result.order.invoice.format.web.url);
+      System.out.println(order.id + " " + order.invoice.format.web.url);
     } catch (ApiException error) {
       System.err.println(error.getCode() + ": " + error.getDetail());
       throw error;
@@ -87,10 +87,10 @@ Amounts use integer minor units: `5000` GHS is GHS 50.00. Reuse the same idempot
 Refunds target paid order line items and return money to the original payment method:
 
 ```java
-import com.inttegro.inttegro.model.CommonModels.Money;
-import com.inttegro.inttegro.model.RefundModels.CreateRefundLineItem;
-import com.inttegro.inttegro.model.RefundModels.CreateRefundParams;
-import com.inttegro.inttegro.model.RefundModels.RefundReason;
+import com.inttegro.common.Money;
+import com.inttegro.refunds.CreateRefundLineItem;
+import com.inttegro.refunds.CreateRefundParams;
+import com.inttegro.refunds.RefundReason;
 
 var result = inttegro.refunds().create(CreateRefundParams.builder()
     .orderId("or_0123456789abcdefghijklmnopqrstuvwxyzABCD")
@@ -104,7 +104,7 @@ var result = inttegro.refunds().create(CreateRefundParams.builder()
 System.out.println(result.refund.id + " " + result.refund.status);
 ```
 
-Use `refunds().cancel`, `refunds().lookup`, and `refunds().page` to manage the refund lifecycle. `orders().refund` remains a deprecated compatibility alias with the same request and response contract.
+Use `refunds().cancel`, `refunds().lookup`, and `refunds().page` to manage the refund lifecycle. `orders().refund` remains a deprecated compatibility alias and returns the created `Refund` directly.
 
 ## Work with the API
 
@@ -112,7 +112,7 @@ The SDK covers orders and checkout, customers, products and prices, purchase int
 
 Java-specific features:
 
-- Typed request and response models with fluent builders for common resources.
+- Typed request and domain types with fluent builders for common resources.
 - Public constants for API enum values.
 - JDK `HttpClient` transport with Jackson response mapping.
 - An injectable `HttpClient` and base URL for connection pools, proxies, tests, and timeouts.

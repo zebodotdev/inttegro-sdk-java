@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Breaking: renamed the primary client to `com.inttegro.Client`.
+- Breaking: replaced public `*Models` container classes with domain packages such as `com.inttegro.customers`, `com.inttegro.orders`, and `com.inttegro.refunds`.
+
 ## 1.0.0 - 2026-09-01
 
 - Breaking: renamed the Maven coordinates, Java packages, and client type to `com.inttegro:inttegro-sdk-java`, `com.inttegro.inttegro`, and `InttegroClient`.
