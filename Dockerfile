@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM maven:3.9-eclipse-temurin-17 AS base
+FROM maven:3.9-eclipse-temurin-17@sha256:a8746f15d5bb26b5b8bacb056cc76211553850f4c71d16aff845cfa004cbc197 AS base
 WORKDIR /app
 COPY pom.xml ./
 RUN mvn -B -q -DskipTests dependency:go-offline
