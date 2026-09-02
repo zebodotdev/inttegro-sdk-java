@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.0.0 - 2026-09-02
+
 - Breaking: renamed the primary client to `com.inttegro.Client`.
 - Breaking: replaced public `*Models` container classes with domain packages such as `com.inttegro.customers`, `com.inttegro.orders`, and `com.inttegro.refunds`.
 
