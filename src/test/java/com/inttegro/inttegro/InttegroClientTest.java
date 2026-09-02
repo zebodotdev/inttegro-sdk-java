@@ -12,6 +12,8 @@ import com.inttegro.inttegro.model.OrderModels.*;
 import com.inttegro.inttegro.model.ProductModels.*;
 import com.inttegro.inttegro.model.AppsModels.*;
 import com.inttegro.inttegro.model.BalanceModels;
+import com.inttegro.inttegro.model.RefundModels.*;
+import com.inttegro.inttegro.model.RequestMeta;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -118,6 +120,52 @@ class InttegroClientTest {
         var resp = client.payouts().cancel("po_123");
         assertEquals("po_123", resp.payout.id);
         assertEquals("canceled", resp.payout.status);
+    }
+
+    @Test
+    void refundsSupportCanonicalLifecycleAndOrderAliasParity() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        AtomicReference<String> canonicalBody = new AtomicReference<>();
+        AtomicReference<String> aliasBody = new AtomicReference<>();
+        String refundBody = "{\"refund\":{\"id\":\"rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd\",\"order_id\":\"or_0123456789abcdefghijklmnopqrstuvwxyzABCD\",\"status\":\"pending\",\"total\":{\"currency\":\"ghs\",\"value\":2500},\"line_items\":[{\"id\":\"rli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN\",\"order_line_item_id\":\"oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN\",\"original_amount_paid\":{\"currency\":\"ghs\",\"value\":5000},\"refund_amount\":{\"currency\":\"ghs\",\"value\":2500}}],\"reason\":\"item_returned\",\"created_at\":\"2026-09-02T10:00:00Z\"}}";
+        server.createContext("/refunds/create", exchange -> captureJson(exchange, canonicalBody, refundBody));
+        server.createContext("/orders/refund", exchange -> captureJson(exchange, aliasBody, refundBody));
+        server.createContext("/refunds/cancel", new JsonHandler(200, refundBody.replace("\"pending\"", "\"canceled\"")));
+        server.createContext("/refunds/lookup", new JsonHandler(200, refundBody));
+        server.createContext("/refunds/page", new JsonHandler(200, "{\"page\":{\"number\":1,\"refunds\":[],\"size\":0}}"));
+        server.start();
+
+        InttegroClient client = new InttegroClient("sk_test_123", baseUrl, null);
+        CreateRefundParams params = CreateRefundParams.builder()
+                .orderId("or_0123456789abcdefghijklmnopqrstuvwxyzABCD")
+                .reason(RefundReason.ITEM_RETURNED)
+                .reasonDetails("Returned unopened")
+                .reference("RETURN-2026-0001")
+                .requestMeta(RequestMeta.withIdempotencyKey("refund_contract_001"))
+                .lineItem(CreateRefundLineItem.builder()
+                        .orderLineItemId("oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN")
+                        .refundAmount(com.inttegro.inttegro.model.CommonModels.Money.of("ghs", 2500))
+                        .reason(RefundReason.ITEM_NOT_AS_DESCRIBED)
+                        .reasonDetails("Wrong size")
+                        .build())
+                .build();
+
+        RefundResponse canonical = client.refunds().create(params);
+        RefundResponse alias = client.orders().refund(params);
+        RefundResponse canceled = client.refunds().cancel("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
+        RefundResponse lookedUp = client.refunds().lookup("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
+        RefundPageResponse page = client.refunds().page(RefundPageParams.builder().pageNumber(1).build());
+
+        assertEquals("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd", canonical.refund.id);
+        assertEquals(RefundStatus.PENDING, canonical.refund.status);
+        assertEquals(2500L, canonical.refund.total.value);
+        assertEquals(canonical.refund.id, alias.refund.id);
+        assertEquals(RefundStatus.CANCELED, canceled.refund.status);
+        assertEquals(canonical.refund.id, lookedUp.refund.id);
+        assertEquals(0, page.page.size);
+        assertEquals(mapper.readTree(canonicalBody.get()), mapper.readTree(aliasBody.get()));
+        assertEquals("item_returned", mapper.readTree(canonicalBody.get()).get("reason").asText());
+        assertEquals("oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN", mapper.readTree(canonicalBody.get()).get("line_items").get(0).get("order_line_item_id").asText());
     }
 
     @Test
@@ -266,6 +314,16 @@ class InttegroClientTest {
 
     private static class OkResponse {
         public boolean ok;
+    }
+
+    private static void captureJson(HttpExchange exchange, AtomicReference<String> target, String responseBody) throws IOException {
+        target.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+        byte[] bytes = responseBody.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream output = exchange.getResponseBody()) {
+            output.write(bytes);
+        }
     }
 
     private static class JsonHandler implements HttpHandler {

@@ -82,6 +82,30 @@ public class CheckoutExample {
 
 Amounts use integer minor units: `5000` GHS is GHS 50.00. Reuse the same idempotency key when retrying the same logical write. If you omit one, the SDK generates a UUIDv7 key for mutating calls.
 
+## Create a partial refund
+
+Refunds target paid order line items and return money to the original payment method:
+
+```java
+import com.inttegro.inttegro.model.CommonModels.Money;
+import com.inttegro.inttegro.model.RefundModels.CreateRefundLineItem;
+import com.inttegro.inttegro.model.RefundModels.CreateRefundParams;
+import com.inttegro.inttegro.model.RefundModels.RefundReason;
+
+var result = inttegro.refunds().create(CreateRefundParams.builder()
+    .orderId("or_0123456789abcdefghijklmnopqrstuvwxyzABCD")
+    .reason(RefundReason.ITEM_RETURNED)
+    .lineItem(CreateRefundLineItem.builder()
+        .orderLineItemId("oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN")
+        .refundAmount(Money.of("ghs", 2500))
+        .build())
+    .build());
+
+System.out.println(result.refund.id + " " + result.refund.status);
+```
+
+Use `refunds().cancel`, `refunds().lookup`, and `refunds().page` to manage the refund lifecycle. `orders().refund` remains a deprecated compatibility alias with the same request and response contract.
+
 ## Work with the API
 
 The SDK covers orders and checkout, customers, products and prices, purchase intents, payment methods, balances, payouts and refunds, notifications, files, application settings, keys, and country specifications. Resource clients use camel-case fields such as `purchaseIntents` and `paymentMethods`.

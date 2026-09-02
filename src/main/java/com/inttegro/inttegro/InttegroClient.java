@@ -22,6 +22,7 @@ import com.inttegro.inttegro.model.FileModels.*;
 import com.inttegro.inttegro.model.FileReferenceModels.*;
 import com.inttegro.inttegro.model.KeyModels.*;
 import com.inttegro.inttegro.model.PurchaseIntentModels.*;
+import com.inttegro.inttegro.model.RefundModels.*;
 import com.inttegro.inttegro.model.RequestMeta;
 
 import java.io.IOException;
@@ -80,6 +81,7 @@ public class InttegroClient {
     private final SecureRandom random;
 
     public final OrdersClient orders;
+    public final RefundsClient refunds;
     public final ChimesClient chimes;
     public final SchedulesClient schedules;
     public final BroadcastsClient broadcasts;
@@ -133,6 +135,7 @@ public class InttegroClient {
         this.random = new SecureRandom();
 
         this.orders = new OrdersClient(this);
+        this.refunds = new RefundsClient(this);
         this.chimes = new ChimesClient(this);
         this.schedules = new SchedulesClient(this);
         this.broadcasts = new BroadcastsClient(this);
@@ -165,6 +168,9 @@ public class InttegroClient {
      * @return orders client for order-related operations
      */
     public OrdersClient orders() { return orders; }
+
+    /** Access canonical refund creation, cancellation, lookup, and pagination operations. */
+    public RefundsClient refunds() { return refunds; }
 
     /**
      * Access the Schedules resource for scheduled chime lookups and cancellations.
@@ -998,21 +1004,18 @@ public class InttegroClient {
         }
 
         /**
-         * Issues a refund for an order (POST /orders/refund).
-         *
-         * <p>Processes a full or partial refund for a completed order. The refunded amount is returned to
-         * the customer's original payment method. The response returns the updated order with refund details.</p>
-         *
-         * @param orderId unique identifier of the order to refund
-         * @return {@link LookupOrderResponse} containing the updated order with refund information
-         * @throws IOException if network communication fails
-         * @throws InterruptedException if the request is interrupted
-         * @throws ApiException if the order is not found (404), not paid, or refund fails
+         * Compatibility alias for {@link RefundsClient#create(CreateRefundParams)}.
+         * Accepts the same line-item refund request and returns the same refund envelope.
          */
-        public LookupOrderResponse refund(String orderId) throws IOException, InterruptedException, ApiException {
-            OrderRefundParams p = new OrderRefundParams();
-            p.orderId = orderId;
-            return client.request("POST", "/orders/refund", p, LookupOrderResponse.class);
+        @Deprecated
+        public RefundResponse refund(CreateRefundParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/orders/refund", params, RefundResponse.class);
+        }
+
+        /** Compatibility alias with an explicit idempotency key. */
+        @Deprecated
+        public RefundResponse refund(CreateRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/orders/refund", params, options, RefundResponse.class);
         }
 
         /**
@@ -1033,6 +1036,48 @@ public class InttegroClient {
 
         private static RequestMeta stableOrderRequestMeta(String action, String orderId) {
             return RequestMeta.withIdempotencyKey("orders_" + action + "_" + orderId);
+        }
+    }
+
+    public static class RefundsClient {
+        private final InttegroClient client;
+
+        public RefundsClient(InttegroClient client) {
+            this.client = client;
+        }
+
+        /** Creates a full or partial refund against one or more paid order line items. */
+        public RefundResponse create(CreateRefundParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/refunds/create", params, RefundResponse.class);
+        }
+
+        /** Creates a refund with an explicit idempotency key. */
+        public RefundResponse create(CreateRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/refunds/create", params, options, RefundResponse.class);
+        }
+
+        public RefundResponse cancel(String refundId) throws IOException, InterruptedException, ApiException {
+            return cancel(CancelRefundParams.builder().refundId(refundId).build());
+        }
+
+        public RefundResponse cancel(CancelRefundParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/refunds/cancel", params, RefundResponse.class);
+        }
+
+        public RefundResponse cancel(CancelRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/refunds/cancel", params, options, RefundResponse.class);
+        }
+
+        public RefundResponse lookup(String refundId) throws IOException, InterruptedException, ApiException {
+            return lookup(LookupRefundParams.builder().refundId(refundId).build());
+        }
+
+        public RefundResponse lookup(LookupRefundParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/refunds/lookup", params, RefundResponse.class);
+        }
+
+        public RefundPageResponse page(RefundPageParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/refunds/page", params, RefundPageResponse.class);
         }
     }
 
