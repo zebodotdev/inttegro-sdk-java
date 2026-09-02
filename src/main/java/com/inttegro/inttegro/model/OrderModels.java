@@ -577,6 +577,32 @@ public class OrderModels {
         @JsonProperty("paid_at") public String paidAt;
         @JsonProperty("cancelled_at") public String cancelledAt;
         public Invoice invoice;
+        public List<OrderRefund> refunds;
+    }
+
+    public static class OrderRefundLineItem {
+        public String id;
+        @JsonProperty("order_line_item_id") public String orderLineItemId;
+        @JsonProperty("original_amount_paid") public Money originalAmountPaid;
+        @JsonProperty("refund_amount") public Money refundAmount;
+        public String reason;
+        @JsonProperty("reason_details") public String reasonDetails;
+    }
+    public static class OrderRefund {
+        public String id;
+        @JsonProperty("order_id") public String orderId;
+        public String status;
+        public Money total;
+        @JsonProperty("line_items") public List<OrderRefundLineItem> lineItems;
+        public String reason;
+        @JsonProperty("reason_details") public String reasonDetails;
+        public String reference;
+        @JsonProperty("custom_data") public Map<String, String> customData;
+        @JsonProperty("created_at") public String createdAt;
+        @JsonProperty("processing_at") public String processingAt;
+        @JsonProperty("succeeded_at") public String succeededAt;
+        @JsonProperty("failed_at") public String failedAt;
+        @JsonProperty("canceled_at") public String canceledAt;
     }
 
     public static class CreateOrderResponse { public Order order; @JsonProperty("redirect_url") public String redirectUrl; }
