@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 3.0.0 - 2026-09-03
+
+- Breaking: resource methods now return concrete domain objects and pages instead of response wrapper classes.
+- Breaking: removed public response classes and renamed payment result status constants to `PaymentResultStatus`.
+
 ## 2.0.0 - 2026-09-02
 
 - Breaking: renamed the primary client to `com.inttegro.Client`.

@@ -14,6 +14,8 @@ import com.inttegro.filereferences.*;
 import com.inttegro.files.*;
 import com.inttegro.financialaccounts.*;
 import com.inttegro.keys.*;
+import com.inttegro.messages.*;
+import com.inttegro.otp.*;
 import com.inttegro.orders.*;
 import com.inttegro.paymentmethods.*;
 import com.inttegro.payouts.*;
@@ -330,6 +332,32 @@ public class Client {
         return mapper.readValue(response.body(), responseClass);
     }
 
+    private <T> T requestResource(String path, Object body, String field, Class<T> resourceClass)
+            throws IOException, InterruptedException, ApiException {
+        JsonNode envelope = request("POST", path, body, JsonNode.class);
+        return decodeResource(envelope, field, resourceClass);
+    }
+
+    private <T> T requestResourceWithOptions(
+            String path,
+            Object body,
+            RequestOptions options,
+            String field,
+            Class<T> resourceClass
+    ) throws IOException, InterruptedException, ApiException {
+        JsonNode envelope = requestWithOptions("POST", path, body, options, JsonNode.class);
+        return decodeResource(envelope, field, resourceClass);
+    }
+
+    private <T> T decodeResource(JsonNode envelope, String field, Class<T> resourceClass)
+            throws JsonProcessingException {
+        JsonNode resource = envelope.get(field);
+        if (resource == null || resource.isNull()) {
+            throw new IllegalStateException("Inttegro returned an invalid " + field + " value");
+        }
+        return mapper.treeToValue(resource, resourceClass);
+    }
+
     private String serialize(Object body) throws JsonProcessingException {
         return mapper.writeValueAsString(body);
     }
@@ -481,7 +509,7 @@ public class Client {
         return o != null ? o.toString() : null;
     }
 
-    private Map<String, Object> multipartRequest(String pathOrUrl, Map<String, Object> fields, Map<String, Path> files, RequestOptions options, boolean authenticated) throws IOException, InterruptedException, ApiException {
+    private JsonNode multipartRequest(String pathOrUrl, Map<String, Object> fields, Map<String, Path> files, RequestOptions options, boolean authenticated) throws IOException, InterruptedException, ApiException {
         String boundary = "----InttegroBoundary" + UUID.randomUUID();
         byte[] body = multipartBody(boundary, fields, files);
         String url = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://") ? pathOrUrl : baseUrl + pathOrUrl;
@@ -507,7 +535,19 @@ public class Client {
         if (response.statusCode() >= 400) {
             throw parseApiException(response);
         }
-        return mapper.readValue(response.body(), Map.class);
+        return mapper.readTree(response.body());
+    }
+
+    private <T> T multipartResource(
+            String pathOrUrl,
+            Map<String, Object> fields,
+            Map<String, Path> files,
+            RequestOptions options,
+            boolean authenticated,
+            String field,
+            Class<T> resourceClass
+    ) throws IOException, InterruptedException, ApiException {
+        return decodeResource(multipartRequest(pathOrUrl, fields, files, options, authenticated), field, resourceClass);
     }
 
     private byte[] multipartBody(String boundary, Map<String, Object> fields, Map<String, Path> files) throws IOException {
@@ -565,37 +605,37 @@ public class Client {
             this.client = client;
         }
 
-        public Map<String, Object> create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public StoredFile create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
 
-        public Map<String, Object> create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+        public StoredFile create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
             Map<String, Object> fields = client.toRequestMap(params);
             Object file = fields.remove("file");
             fields.remove("idempotency_key");
-            return client.multipartRequest("/files/create", fields, Map.of("file", toPath(file)), options, true);
+            return client.multipartResource("/files/create", fields, Map.of("file", toPath(file)), options, true, "file", StoredFile.class);
         }
 
-        public Map<String, Object> create(FileCreateParams params) throws IOException, InterruptedException, ApiException {
+        public StoredFile create(FileCreateParams params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
 
-        public Map<String, Object> create(FileCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+        public StoredFile create(FileCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
             Map<String, Object> fields = client.toRequestMap(params);
             Object file = fields.remove("file");
-            return client.multipartRequest("/files/create", fields, Map.of("file", toPath(file)), options, true);
+            return client.multipartResource("/files/create", fields, Map.of("file", toPath(file)), options, true, "file", StoredFile.class);
         }
 
-        public Map<String, Object> lookup(String fileId) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/files/lookup", Map.of("file_id", fileId), Map.class);
+        public StoredFile lookup(String fileId) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/files/lookup", Map.of("file_id", fileId), "file", StoredFile.class);
         }
 
-        public Map<String, Object> page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/files/page", params, Map.class);
+        public StoredFilePage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/files/page", params, "page", StoredFilePage.class);
         }
 
-        public Map<String, Object> page(FilePageParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/files/page", client.toRequestMap(params), Map.class);
+        public StoredFilePage page(FilePageParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/files/page", client.toRequestMap(params), "page", StoredFilePage.class);
         }
 
         public FileDownload contents(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
@@ -606,8 +646,8 @@ public class Client {
             return client.binaryRequest("POST", "/files/contents", client.toRequestMap(params), true);
         }
 
-        public Map<String, Object> delete(String fileId) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/files/delete", Map.of("file_id", fileId), Map.class);
+        public StoredFile delete(String fileId) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/files/delete", Map.of("file_id", fileId), "file", StoredFile.class);
         }
     }
 
@@ -618,44 +658,44 @@ public class Client {
             this.client = client;
         }
 
-        public Map<String, Object> create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public FileLinkCreation create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
 
-        public Map<String, Object> create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/file_links/create", params, options, Map.class);
+        public FileLinkCreation create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/file_links/create", params, options, FileLinkCreation.class);
         }
 
-        public Map<String, Object> create(FileLinkCreateParams params) throws IOException, InterruptedException, ApiException {
+        public FileLinkCreation create(FileLinkCreateParams params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
 
-        public Map<String, Object> create(FileLinkCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/file_links/create", client.toRequestMap(params), options, Map.class);
+        public FileLinkCreation create(FileLinkCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/file_links/create", client.toRequestMap(params), options, FileLinkCreation.class);
         }
 
-        public Map<String, Object> lookup(String id) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/file_links/lookup", Map.of("id", id), Map.class);
+        public FileLink lookup(String id) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/file_links/lookup", Map.of("id", id), "file_link", FileLink.class);
         }
 
-        public Map<String, Object> page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/file_links/page", params, Map.class);
+        public FileLinkPage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/file_links/page", params, "page", FileLinkPage.class);
         }
 
-        public Map<String, Object> page(FileLinkPageParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/file_links/page", client.toRequestMap(params), Map.class);
+        public FileLinkPage page(FileLinkPageParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/file_links/page", client.toRequestMap(params), "page", FileLinkPage.class);
         }
 
-        public Map<String, Object> revoke(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/file_links/revoke", params, options, Map.class);
+        public FileLink revoke(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/file_links/revoke", params, options, "file_link", FileLink.class);
         }
 
-        public Map<String, Object> revoke(FileLinkRevokeParams params) throws IOException, InterruptedException, ApiException {
+        public FileLink revoke(FileLinkRevokeParams params) throws IOException, InterruptedException, ApiException {
             return revoke(params, null);
         }
 
-        public Map<String, Object> revoke(FileLinkRevokeParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/file_links/revoke", client.toRequestMap(params), options, Map.class);
+        public FileLink revoke(FileLinkRevokeParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/file_links/revoke", client.toRequestMap(params), options, "file_link", FileLink.class);
         }
 
         public FileDownload open(String url) throws IOException, InterruptedException, ApiException {
@@ -670,12 +710,12 @@ public class Client {
             this.client = client;
         }
 
-        public FileReferenceReconcileResponse reconcile(FileReferenceReconcileParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/file_references/reconcile", params, FileReferenceReconcileResponse.class);
+        public FileReferenceReconciliation reconcile(FileReferenceReconcileParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/file_references/reconcile", params, FileReferenceReconciliation.class);
         }
 
-        public FileReferenceReconcileResponse reconcile(FileReferenceReconcileParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/file_references/reconcile", params, options, FileReferenceReconcileResponse.class);
+        public FileReferenceReconciliation reconcile(FileReferenceReconcileParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestWithOptions("POST", "/file_references/reconcile", params, options, FileReferenceReconciliation.class);
         }
     }
 
@@ -686,59 +726,59 @@ public class Client {
             this.client = client;
         }
 
-        public Map<String, Object> create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/upload_requests/create", params, options, Map.class);
+        public UploadRequest create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/upload_requests/create", params, options, "upload_request", UploadRequest.class);
         }
 
-        public Map<String, Object> create(UploadRequestCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/upload_requests/create", client.toRequestMap(params), options, Map.class);
+        public UploadRequest create(UploadRequestCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/upload_requests/create", client.toRequestMap(params), options, "upload_request", UploadRequest.class);
         }
 
-        public Map<String, Object> lookup(String id) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/upload_requests/lookup", Map.of("id", id), Map.class);
+        public UploadRequest lookup(String id) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/upload_requests/lookup", Map.of("id", id), "upload_request", UploadRequest.class);
         }
 
-        public Map<String, Object> page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/upload_requests/page", params, Map.class);
+        public UploadRequestPage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/upload_requests/page", params, "page", UploadRequestPage.class);
         }
 
-        public Map<String, Object> page(UploadRequestPageParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/upload_requests/page", client.toRequestMap(params), Map.class);
+        public UploadRequestPage page(UploadRequestPageParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/upload_requests/page", client.toRequestMap(params), "page", UploadRequestPage.class);
         }
 
-        public Map<String, Object> cancel(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/upload_requests/cancel", params, options, Map.class);
+        public UploadRequest cancel(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/upload_requests/cancel", params, options, "upload_request", UploadRequest.class);
         }
 
-        public Map<String, Object> cancel(UploadRequestCancelParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/upload_requests/cancel", client.toRequestMap(params), options, Map.class);
+        public UploadRequest cancel(UploadRequestCancelParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/upload_requests/cancel", client.toRequestMap(params), options, "upload_request", UploadRequest.class);
         }
 
-        public Map<String, Object> review(ReviewUploadRequestAttemptByIdParams params) throws IOException, InterruptedException, ApiException {
+        public UploadRequest review(ReviewUploadRequestAttemptByIdParams params) throws IOException, InterruptedException, ApiException {
             return review(params, null);
         }
 
-        public Map<String, Object> review(ReviewUploadRequestAttemptByIdParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/upload_requests/review", client.toRequestMap(params), options, Map.class);
+        public UploadRequest review(ReviewUploadRequestAttemptByIdParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/upload_requests/review", client.toRequestMap(params), options, "upload_request", UploadRequest.class);
         }
 
-        public Map<String, Object> review(ReviewUploadRequestAttemptByOrdinalParams params) throws IOException, InterruptedException, ApiException {
+        public UploadRequest review(ReviewUploadRequestAttemptByOrdinalParams params) throws IOException, InterruptedException, ApiException {
             return review(params, null);
         }
 
-        public Map<String, Object> review(ReviewUploadRequestAttemptByOrdinalParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/upload_requests/review", client.toRequestMap(params), options, Map.class);
+        public UploadRequest review(ReviewUploadRequestAttemptByOrdinalParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/upload_requests/review", client.toRequestMap(params), options, "upload_request", UploadRequest.class);
         }
 
-        public Map<String, Object> fulfill(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public UploadFulfillment fulfill(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
             String uploadURL = (String) params.get("upload_url");
-            return client.multipartRequest(uploadURL, Map.of(), Map.of("file", toPath(params.get("file"))), null, false);
+            return client.mapper.treeToValue(client.multipartRequest(uploadURL, Map.of(), Map.of("file", toPath(params.get("file"))), null, false), UploadFulfillment.class);
         }
 
-        public Map<String, Object> fulfill(UploadRequestFulfillParams params) throws IOException, InterruptedException, ApiException {
+        public UploadFulfillment fulfill(UploadRequestFulfillParams params) throws IOException, InterruptedException, ApiException {
             Map<String, Object> fields = client.toRequestMap(params);
             String uploadURL = (String) fields.get("upload_url");
-            return client.multipartRequest(uploadURL, Map.of(), Map.of("file", toPath(fields.get("file"))), null, false);
+            return client.mapper.treeToValue(client.multipartRequest(uploadURL, Map.of(), Map.of("file", toPath(fields.get("file"))), null, false), UploadFulfillment.class);
         }
     }
 
@@ -749,48 +789,48 @@ public class Client {
             this.client = client;
         }
 
-        public Map<String, Object> create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public MessageTemplate create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
 
-        public Map<String, Object> create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/create", params, options, Map.class);
+        public MessageTemplate create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/message_templates/create", params, options, "message_template", MessageTemplate.class);
         }
 
-        public Map<String, Object> update(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public MessageTemplate update(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
             return update(params, null);
         }
 
-        public Map<String, Object> update(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/update", params, options, Map.class);
+        public MessageTemplate update(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/message_templates/update", params, options, "message_template", MessageTemplate.class);
         }
 
-        public Map<String, Object> publish(String templateId) throws IOException, InterruptedException, ApiException {
+        public MessageTemplate publish(String templateId) throws IOException, InterruptedException, ApiException {
             return publish(templateId, null);
         }
 
-        public Map<String, Object> publish(String templateId, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/publish", Map.of("id", templateId), options, Map.class);
+        public MessageTemplate publish(String templateId, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/message_templates/publish", Map.of("id", templateId), options, "message_template", MessageTemplate.class);
         }
 
-        public Map<String, Object> archive(String templateId) throws IOException, InterruptedException, ApiException {
+        public MessageTemplate archive(String templateId) throws IOException, InterruptedException, ApiException {
             return archive(templateId, null);
         }
 
-        public Map<String, Object> archive(String templateId, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/message_templates/archive", Map.of("id", templateId), options, Map.class);
+        public MessageTemplate archive(String templateId, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/message_templates/archive", Map.of("id", templateId), options, "message_template", MessageTemplate.class);
         }
 
-        public Map<String, Object> lookup(String templateId) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/message_templates/lookup", Map.of("id", templateId), Map.class);
+        public MessageTemplate lookup(String templateId) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/message_templates/lookup", Map.of("id", templateId), "message_template", MessageTemplate.class);
         }
 
-        public Map<String, Object> page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/message_templates/page", params, Map.class);
+        public MessageTemplatePage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/message_templates/page", params, "page", MessageTemplatePage.class);
         }
 
-        public Map<String, Object> renderPreview(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/message_templates/render_preview", params, Map.class);
+        public MessageTemplatePreview renderPreview(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/message_templates/render_preview", params, MessageTemplatePreview.class);
         }
 
     }
@@ -1082,37 +1122,37 @@ public class Client {
         }
 
         /** Creates a full or partial refund against one or more paid order line items. */
-        public RefundResponse create(CreateRefundParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/refunds/create", params, RefundResponse.class);
+        public Refund create(CreateRefundParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/refunds/create", params, "refund", Refund.class);
         }
 
         /** Creates a refund with an explicit idempotency key. */
-        public RefundResponse create(CreateRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/refunds/create", params, options, RefundResponse.class);
+        public Refund create(CreateRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/refunds/create", params, options, "refund", Refund.class);
         }
 
-        public RefundResponse cancel(String refundId) throws IOException, InterruptedException, ApiException {
+        public Refund cancel(String refundId) throws IOException, InterruptedException, ApiException {
             return cancel(CancelRefundParams.builder().refundId(refundId).build());
         }
 
-        public RefundResponse cancel(CancelRefundParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/refunds/cancel", params, RefundResponse.class);
+        public Refund cancel(CancelRefundParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/refunds/cancel", params, "refund", Refund.class);
         }
 
-        public RefundResponse cancel(CancelRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/refunds/cancel", params, options, RefundResponse.class);
+        public Refund cancel(CancelRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/refunds/cancel", params, options, "refund", Refund.class);
         }
 
-        public RefundResponse lookup(String refundId) throws IOException, InterruptedException, ApiException {
+        public Refund lookup(String refundId) throws IOException, InterruptedException, ApiException {
             return lookup(LookupRefundParams.builder().refundId(refundId).build());
         }
 
-        public RefundResponse lookup(LookupRefundParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/refunds/lookup", params, RefundResponse.class);
+        public Refund lookup(LookupRefundParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/refunds/lookup", params, "refund", Refund.class);
         }
 
-        public RefundPageResponse page(RefundPageParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/refunds/page", params, RefundPageResponse.class);
+        public RefundPage page(RefundPageParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/refunds/page", params, "page", RefundPage.class);
         }
     }
 
@@ -1130,13 +1170,13 @@ public class Client {
          * is sent immediately and returns delivery status information.</p>
          *
          * @param params chime parameters including recipient, message, and optional transport settings
-         * @return {@link ChimeResponse} with chime ID and delivery status
+         * @return {@link Chime} with chime ID and delivery status
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid parameters (400), unauthorized (401), or validation fails (422)
          */
-        public ChimeResponse send(SendChimeParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/chimes/send", params, ChimeResponse.class);
+        public Chime send(SendChimeParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/chimes/send", params, "chime", Chime.class);
         }
 
         /**
@@ -1146,15 +1186,15 @@ public class Client {
          * message content, and timestamps.</p>
          *
          * @param chimeId unique identifier of the chime to lookup
-         * @return {@link ChimeResponse} containing chime details and delivery status
+         * @return {@link Chime} containing chime details and delivery status
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if chime not found (404) or other API errors occur
          */
-        public ChimeResponse lookup(String chimeId) throws IOException, InterruptedException, ApiException {
+        public Chime lookup(String chimeId) throws IOException, InterruptedException, ApiException {
             LookupChimeParams p = new LookupChimeParams();
             p.chimeId = chimeId;
-            return client.request("POST", "/chimes/lookup", p, ChimeResponse.class);
+            return client.requestResource("/chimes/lookup", p, "chime", Chime.class);
         }
 
         /**
@@ -1164,13 +1204,13 @@ public class Client {
          * delivered on or after the specified time. Scheduled chimes can be cancelled before delivery.</p>
          *
          * @param params scheduling parameters including recipient(s), message, delivery time, and transport settings
-         * @return {@link ScheduleResponse} with scheduled chime details
+         * @return {@link ScheduledChime} with scheduled chime details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid parameters (400), unauthorized (401), or validation fails (422)
          */
-        public ScheduleResponse schedule(ScheduleChimeParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/chimes/schedule", params, ScheduleResponse.class);
+        public ScheduledChime schedule(ScheduleChimeParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/chimes/schedule", params, "scheduled_chime", ScheduledChime.class);
         }
 
         /**
@@ -1180,17 +1220,17 @@ public class Client {
          * marketing announcements or bulk notifications.</p>
          *
          * @param params broadcast parameters including recipients and message template
-         * @return {@link BroadcastResponse} summary of the queued broadcast
+         * @return {@link BroadcastDetail} summary of the queued broadcast
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid parameters (400), unauthorized (401), or validation fails (422)
          */
-        public BroadcastResponse broadcast(BroadcastChimeParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/chimes/broadcast", params, BroadcastResponse.class);
+        public BroadcastDetail broadcast(BroadcastChimeParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/chimes/broadcast", params, "broadcast", BroadcastDetail.class);
         }
 
-        public PageChimesResponse page(PageChimesParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/chimes/page", params, PageChimesResponse.class);
+        public ChimePage page(PageChimesParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/chimes/page", params, "page", ChimePage.class);
         }
     }
 
@@ -1205,30 +1245,30 @@ public class Client {
          * Retrieves scheduled chime details by schedule ID (POST /schedules/lookup).
          *
          * @param scheduleId schedule identifier
-         * @return {@link ScheduleLookupResponse} containing scheduled chime details
+         * @return {@link ScheduleDetail} containing scheduled chime details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if schedule not found (404) or other API errors occur
          */
-        public ScheduleLookupResponse lookup(String scheduleId) throws IOException, InterruptedException, ApiException {
+        public ScheduleDetail lookup(String scheduleId) throws IOException, InterruptedException, ApiException {
             LookupScheduleParams p = new LookupScheduleParams();
             p.scheduleId = scheduleId;
-            return client.request("POST", "/schedules/lookup", p, ScheduleLookupResponse.class);
+            return client.requestResource("/schedules/lookup", p, "scheduled_chime", ScheduleDetail.class);
         }
 
         /**
          * Cancels a scheduled chime by schedule ID (POST /schedules/cancel).
          *
          * @param scheduleId schedule identifier
-         * @return {@link ScheduleCancelResponse} containing the canceled schedule details
+         * @return {@link ScheduleDetail} containing the canceled schedule details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if schedule not found (404) or already executed/canceled (422)
          */
-        public ScheduleCancelResponse cancel(String scheduleId) throws IOException, InterruptedException, ApiException {
+        public ScheduleDetail cancel(String scheduleId) throws IOException, InterruptedException, ApiException {
             CancelScheduleParams p = new CancelScheduleParams();
             p.scheduleId = scheduleId;
-            return client.request("POST", "/schedules/cancel", p, ScheduleCancelResponse.class);
+            return client.requestResource("/schedules/cancel", p, "scheduled_chime", ScheduleDetail.class);
         }
     }
 
@@ -1243,30 +1283,30 @@ public class Client {
          * Retrieves broadcast details by broadcast ID (POST /broadcasts/lookup).
          *
          * @param broadcastId broadcast identifier
-         * @return {@link LookupBroadcastResponse} containing broadcast details
+         * @return {@link BroadcastDetail} containing broadcast details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if broadcast not found (404) or other API errors occur
          */
-        public LookupBroadcastResponse lookup(String broadcastId) throws IOException, InterruptedException, ApiException {
+        public BroadcastDetail lookup(String broadcastId) throws IOException, InterruptedException, ApiException {
             LookupBroadcastParams p = new LookupBroadcastParams();
             p.broadcastId = broadcastId;
-            return client.request("POST", "/broadcasts/lookup", p, LookupBroadcastResponse.class);
+            return client.requestResource("/broadcasts/lookup", p, "broadcast", BroadcastDetail.class);
         }
 
         /**
          * Cancels a broadcast by broadcast ID (POST /broadcasts/cancel).
          *
          * @param broadcastId broadcast identifier
-         * @return {@link BroadcastCancelResponse} containing canceled broadcast details
+         * @return {@link BroadcastDetail} containing canceled broadcast details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if broadcast not found (404) or already completed/canceled (422)
          */
-        public BroadcastCancelResponse cancel(String broadcastId) throws IOException, InterruptedException, ApiException {
+        public BroadcastDetail cancel(String broadcastId) throws IOException, InterruptedException, ApiException {
             CancelBroadcastParams p = new CancelBroadcastParams();
             p.broadcastId = broadcastId;
-            return client.request("POST", "/broadcasts/cancel", p, BroadcastCancelResponse.class);
+            return client.requestResource("/broadcasts/cancel", p, "broadcast", BroadcastDetail.class);
         }
     }
 
@@ -1289,8 +1329,8 @@ public class Client {
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid parameters or delivery fails
          */
-        public Map<String, Object> initiate(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/otp/initiate", payload, Map.class);
+        public OtpTransaction initiate(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/otp/initiate", payload, "transaction", OtpTransaction.class);
         }
 
         /**
@@ -1305,8 +1345,8 @@ public class Client {
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if session invalid, code incorrect, or maximum attempts exceeded
          */
-        public Map<String, Object> verify(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/otp/verify", payload, Map.class);
+        public OtpVerification verify(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/otp/verify", payload, OtpVerification.class);
         }
 
         /**
@@ -1315,8 +1355,8 @@ public class Client {
          * @param payload lookup parameters including transaction_id
          * @return map containing transaction information
          */
-        public Map<String, Object> lookup(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/otp/lookup", payload, Map.class);
+        public OtpTransaction lookup(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/otp/lookup", payload, "transaction", OtpTransaction.class);
         }
 
         /**
@@ -1325,14 +1365,14 @@ public class Client {
          * @param payload cancellation parameters including transaction_id and reason
          * @return map containing canceled transaction information
          */
-        public Map<String, Object> cancel(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/otp/cancel", payload, Map.class);
+        public OtpTransaction cancel(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/otp/cancel", payload, "transaction", OtpTransaction.class);
         }
 
         /**
          * Backwards-compatible alias for initiate().
          */
-        public Map<String, Object> initialize(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
+        public OtpTransaction initialize(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
             return initiate(payload);
         }
     }
@@ -1352,17 +1392,17 @@ public class Client {
          * Mobile money payment methods may require verification before they can be charged.</p>
          *
          * @param params tokenization parameters including customer ID and payment method details
-         * @return {@link PaymentMethodResponse} with the tokenized payment method
+         * @return {@link PaymentMethod} with the tokenized payment method
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid payment details or tokenization fails
          */
-        public PaymentMethodResponse tokenize(TokenizePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/tokenize", params, PaymentMethodResponse.class);
+        public PaymentMethod tokenize(TokenizePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/tokenize", params, "payment_method", PaymentMethod.class);
         }
 
-        public PaymentMethodResponse tokenize(TokenizePaymentMethodParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/payment_methods/tokenize", params, options, PaymentMethodResponse.class);
+        public PaymentMethod tokenize(TokenizePaymentMethodParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/payment_methods/tokenize", params, options, "payment_method", PaymentMethod.class);
         }
 
         /**
@@ -1373,20 +1413,20 @@ public class Client {
          * Verified payment methods can be charged without additional confirmation steps.</p>
          *
          * @param paymentMethodId unique identifier of the payment method to verify
-         * @return {@link VerificationResponse} with verification session details
+         * @return {@link PaymentMethodVerificationSession} with verification session details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if payment method not found or verification cannot be initiated
          */
-        public VerificationResponse verify(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+        public PaymentMethodVerificationSession verify(String paymentMethodId) throws IOException, InterruptedException, ApiException {
             VerifyPaymentMethodParams p = new VerifyPaymentMethodParams();
             p.paymentMethodId = paymentMethodId;
             p.requestMeta = stablePaymentMethodRequestMeta("verify", paymentMethodId);
             return verify(p);
         }
 
-        public VerificationResponse verify(VerifyPaymentMethodParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/verify", params, VerificationResponse.class);
+        public PaymentMethodVerificationSession verify(VerifyPaymentMethodParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/verify", params, "verification", PaymentMethodVerificationSession.class);
         }
 
         /**
@@ -1397,13 +1437,13 @@ public class Client {
          * confirmation steps.</p>
          *
          * @param params confirmation parameters including payment method ID and verification token
-         * @return {@link PaymentMethodResponse} with the verified payment method
+         * @return {@link PaymentMethod} with the verified payment method
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if token invalid, session expired, or maximum attempts exceeded
          */
-        public PaymentMethodResponse confirmVerification(ConfirmPaymentMethodVerificationParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/confirm_verification", params, PaymentMethodResponse.class);
+        public PaymentMethod confirmVerification(ConfirmPaymentMethodVerificationParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/confirm_verification", params, "payment_method", PaymentMethod.class);
         }
 
         /**
@@ -1413,59 +1453,59 @@ public class Client {
          * and associated customer. Sensitive information (full card numbers, account numbers) is not returned.</p>
          *
          * @param paymentMethodId unique identifier of the payment method
-         * @return {@link PaymentMethodResponse} containing payment method details
+         * @return {@link PaymentMethod} containing payment method details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if payment method not found (404)
          */
-        public PaymentMethodResponse lookup(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+        public PaymentMethod lookup(String paymentMethodId) throws IOException, InterruptedException, ApiException {
             LookupPaymentMethodParams p = new LookupPaymentMethodParams();
             p.paymentMethodId = paymentMethodId;
-            return client.request("POST", "/payment_methods/lookup", p, PaymentMethodResponse.class);
+            return client.requestResource("/payment_methods/lookup", p, "payment_method", PaymentMethod.class);
         }
 
-        public PaymentMethodPageResponse page(PagePaymentMethodsParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/page", params, PaymentMethodPageResponse.class);
+        public PaymentMethodPage page(PagePaymentMethodsParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/page", params, "page", PaymentMethodPage.class);
         }
 
-        public PaymentMethodResponse update(UpdatePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/update", params, PaymentMethodResponse.class);
+        public PaymentMethod update(UpdatePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/update", params, "payment_method", PaymentMethod.class);
         }
 
-        public PaymentMethodResponse update(UpdatePaymentMethodParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/payment_methods/update", params, options, PaymentMethodResponse.class);
+        public PaymentMethod update(UpdatePaymentMethodParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/payment_methods/update", params, options, "payment_method", PaymentMethod.class);
         }
 
-        public PaymentMethodResponse activate(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+        public PaymentMethod activate(String paymentMethodId) throws IOException, InterruptedException, ApiException {
             return activate(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
         }
 
-        public PaymentMethodResponse activate(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/activate", params, PaymentMethodResponse.class);
+        public PaymentMethod activate(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/activate", params, "payment_method", PaymentMethod.class);
         }
 
-        public PaymentMethodResponse disactivate(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+        public PaymentMethod disactivate(String paymentMethodId) throws IOException, InterruptedException, ApiException {
             return disactivate(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
         }
 
-        public PaymentMethodResponse disactivate(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/disactivate", params, PaymentMethodResponse.class);
+        public PaymentMethod disactivate(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/disactivate", params, "payment_method", PaymentMethod.class);
         }
 
-        public PaymentMethodResponse archive(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+        public PaymentMethod archive(String paymentMethodId) throws IOException, InterruptedException, ApiException {
             return archive(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
         }
 
-        public PaymentMethodResponse archive(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/archive", params, PaymentMethodResponse.class);
+        public PaymentMethod archive(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/archive", params, "payment_method", PaymentMethod.class);
         }
 
-        public PaymentMethodResponse unarchive(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+        public PaymentMethod unarchive(String paymentMethodId) throws IOException, InterruptedException, ApiException {
             return unarchive(PaymentMethodActionParams.builder().paymentMethodId(paymentMethodId).build());
         }
 
-        public PaymentMethodResponse unarchive(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/unarchive", params, PaymentMethodResponse.class);
+        public PaymentMethod unarchive(PaymentMethodActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/unarchive", params, "payment_method", PaymentMethod.class);
         }
 
         /**
@@ -1476,20 +1516,20 @@ public class Client {
          * will continue to completion.</p>
          *
          * @param paymentMethodId unique identifier of the payment method to delete
-         * @return {@link DeletePaymentMethodResponse} confirming deletion
+         * @return {@link PaymentMethodDeletion} confirming deletion
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if payment method not found (404) or cannot be deleted
          */
-        public DeletePaymentMethodResponse delete(String paymentMethodId) throws IOException, InterruptedException, ApiException {
+        public PaymentMethodDeletion delete(String paymentMethodId) throws IOException, InterruptedException, ApiException {
             DeletePaymentMethodParams p = new DeletePaymentMethodParams();
             p.paymentMethodId = paymentMethodId;
             p.requestMeta = stablePaymentMethodRequestMeta("delete", paymentMethodId);
             return delete(p);
         }
 
-        public DeletePaymentMethodResponse delete(DeletePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/delete", params, DeletePaymentMethodResponse.class);
+        public PaymentMethodDeletion delete(DeletePaymentMethodParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/payment_methods/delete", params, PaymentMethodDeletion.class);
         }
 
         /**
@@ -1498,13 +1538,13 @@ public class Client {
          * <p>Returns configuration for which payment method types are enabled, supported countries and currencies,
          * and any acceptance rules or restrictions.</p>
          *
-         * @return {@link PaymentMethodSettingsResponse} with acceptance settings
+         * @return {@link PaymentMethodSettings} with acceptance settings
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401)
          */
-        public PaymentMethodSettingsResponse settings() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payment_methods/settings", new HashMap<>(), PaymentMethodSettingsResponse.class);
+        public PaymentMethodSettings settings() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payment_methods/settings", new HashMap<>(), "settings", PaymentMethodSettings.class);
         }
 
         private static RequestMeta stablePaymentMethodRequestMeta(String action, String paymentMethodId) {
@@ -1527,15 +1567,15 @@ public class Client {
          * will automatically route to the appropriate destination based on the balance currency.</p>
          *
          * @param destinations map of currency codes to financial account IDs (e.g., {"ghs": "fa_123", "usd": "fa_456"})
-         * @return {@link PayoutSettingsResponse} with updated payout settings
+         * @return {@link PayoutSettings} with updated payout settings
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid account IDs, unsupported currencies, or accounts not compatible with currencies
          */
-        public PayoutSettingsResponse setDestinations(Map<String, String> destinations) throws IOException, InterruptedException, ApiException {
+        public PayoutSettings setDestinations(Map<String, String> destinations) throws IOException, InterruptedException, ApiException {
             Map<String, Object> body = new HashMap<>();
             body.put("destinations", destinations);
-            return client.request("POST", "/payouts/set_destinations", body, PayoutSettingsResponse.class);
+            return client.requestResource("/payouts/set_destinations", body, "settings", PayoutSettings.class);
         }
 
         /**
@@ -1544,13 +1584,13 @@ public class Client {
          * <p>Returns payout schedule configuration (automatic or manual), destination mappings per currency,
          * FX conversion settings, and any schedule-specific parameters.</p>
          *
-         * @return {@link PayoutSettingsResponse} with payout configuration
+         * @return {@link PayoutSettings} with payout configuration
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401)
          */
-        public PayoutSettingsResponse settings() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/settings", new HashMap<>(), PayoutSettingsResponse.class);
+        public PayoutSettings settings() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/settings", new HashMap<>(), "settings", PayoutSettings.class);
         }
 
         /**
@@ -1560,17 +1600,17 @@ public class Client {
          * only occur when explicitly triggered by you. Use this when you need full control over when funds
          * are transferred from your balance to your bank accounts.</p>
          *
-         * @return {@link PayoutSettingsResponse} with updated settings showing manual schedule
+         * @return {@link PayoutSettings} with updated settings showing manual schedule
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401) or already in manual mode
          */
-        public PayoutSettingsResponse disableAutomatic() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/disable", new HashMap<>(), PayoutSettingsResponse.class);
+        public PayoutSettings disableAutomatic() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/disable", new HashMap<>(), "settings", PayoutSettings.class);
         }
 
-        public PayoutSettingsResponse enableAutomatic() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/enable", new HashMap<>(), PayoutSettingsResponse.class);
+        public PayoutSettings enableAutomatic() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/enable", new HashMap<>(), "settings", PayoutSettings.class);
         }
 
         /**
@@ -1580,13 +1620,13 @@ public class Client {
          * For example, a GHS balance can be paid out to a USD bank account with automatic conversion.
          * Exchange rates are applied at the time of payout execution.</p>
          *
-         * @return {@link PayoutSettingsResponse} with FX enabled in settings
+         * @return {@link PayoutSettings} with FX enabled in settings
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401) or FX not supported for your account
          */
-        public PayoutSettingsResponse enableFX() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/enable_fx", new HashMap<>(), PayoutSettingsResponse.class);
+        public PayoutSettings enableFX() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/enable_fx", new HashMap<>(), "settings", PayoutSettings.class);
         }
 
         /**
@@ -1596,13 +1636,13 @@ public class Client {
          * destination accounts that match the balance currency. Attempting to payout to a mismatched
          * currency account will fail.</p>
          *
-         * @return {@link PayoutSettingsResponse} with FX disabled in settings
+         * @return {@link PayoutSettings} with FX disabled in settings
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401)
          */
-        public PayoutSettingsResponse disableFX() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/disable_fx", new HashMap<>(), PayoutSettingsResponse.class);
+        public PayoutSettings disableFX() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/disable_fx", new HashMap<>(), "settings", PayoutSettings.class);
         }
 
         /**
@@ -1613,25 +1653,25 @@ public class Client {
          * Each payout includes amount, destination, status, and timestamps.</p>
          *
          * @param params pagination parameters including page index and size
-         * @return {@link PayoutPageResponse} containing list of payouts and pagination details
+         * @return {@link PayoutPage} containing list of payouts and pagination details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid pagination parameters (400) or unauthorized (401)
          */
-        public PayoutPageResponse page(PayoutPageParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/page", params, PayoutPageResponse.class);
+        public PayoutPage page(PayoutPageParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/page", params, "page", PayoutPage.class);
         }
 
-        public PayoutResponse lookup(String payoutId) throws IOException, InterruptedException, ApiException {
+        public Payout lookup(String payoutId) throws IOException, InterruptedException, ApiException {
             return lookup(LookupPayoutParams.builder().payoutId(payoutId).build());
         }
 
-        public PayoutResponse lookup(LookupPayoutParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/lookup", params, PayoutResponse.class);
+        public Payout lookup(LookupPayoutParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/lookup", params, "payout", Payout.class);
         }
 
-        public PayoutResponse schedule(SchedulePayoutParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/payouts/schedule", params, PayoutResponse.class);
+        public Payout schedule(SchedulePayoutParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/payouts/schedule", params, "payout", Payout.class);
         }
 
         /**
@@ -1641,15 +1681,15 @@ public class Client {
          * Once canceled, the payout is permanently stopped.</p>
          *
          * @param payoutId scheduled payout identifier
-         * @return {@link CancelPayoutResponse} containing the canceled payout
+         * @return {@link Payout} containing the canceled payout
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if payout cannot be canceled or request is invalid
          */
-        public CancelPayoutResponse cancel(String payoutId) throws IOException, InterruptedException, ApiException {
+        public Payout cancel(String payoutId) throws IOException, InterruptedException, ApiException {
             CancelPayoutParams p = new CancelPayoutParams();
             p.payoutId = payoutId;
-            return client.request("POST", "/payouts/cancel", p, CancelPayoutResponse.class);
+            return client.requestResource("/payouts/cancel", p, "payout", Payout.class);
         }
     }
 
@@ -1668,21 +1708,21 @@ public class Client {
          * are returned in reverse chronological order (newest first).</p>
          *
          * @param params pagination parameters including page index and size
-         * @return {@link BalanceTransactionPageResponse} containing transactions and pagination details
+         * @return {@link BalanceTransactionPage} containing transactions and pagination details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid pagination parameters (400) or unauthorized (401)
          */
-        public BalanceTransactionPageResponse page(BalanceTransactionPageParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/balance_transactions/page", params, BalanceTransactionPageResponse.class);
+        public BalanceTransactionPage page(BalanceTransactionPageParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/balance_transactions/page", params, "page", BalanceTransactionPage.class);
         }
 
-        public BalanceTransactionResponse lookup(String transactionId) throws IOException, InterruptedException, ApiException {
+        public BalanceTransaction lookup(String transactionId) throws IOException, InterruptedException, ApiException {
             return lookup(BalanceTransactionLookupParams.builder().transactionId(transactionId).build());
         }
 
-        public BalanceTransactionResponse lookup(BalanceTransactionLookupParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/balance_transactions/lookup", params, BalanceTransactionResponse.class);
+        public BalanceTransaction lookup(BalanceTransactionLookupParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/balance_transactions/lookup", params, "transaction", BalanceTransaction.class);
         }
     }
 
@@ -1696,13 +1736,13 @@ public class Client {
         /**
          * Retrieves the current balances snapshot (POST /balances).
          *
-         * @return {@link BalancesResponse} containing per-currency balance breakdowns
+         * @return {@link BalanceSnapshot} containing per-currency balance breakdowns
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401)
          */
-        public BalancesResponse get() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/balances", new HashMap<>(), BalancesResponse.class);
+        public BalanceSnapshot get() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/balances", new HashMap<>(), "balances", BalanceSnapshot.class);
         }
     }
 
@@ -1722,13 +1762,13 @@ public class Client {
          * receive payouts.</p>
          *
          * @param params account creation parameters including type, currency, and account details
-         * @return {@link FinancialAccountResponse} with the created account information
+         * @return {@link FinancialAccount} with the created account information
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid account details (400, 422) or unauthorized (401)
          */
-        public FinancialAccountResponse create(FinancialAccountCreateParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/create", params, FinancialAccountResponse.class);
+        public FinancialAccount create(FinancialAccountCreateParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/create", params, "account", FinancialAccount.class);
         }
 
         /**
@@ -1738,20 +1778,20 @@ public class Client {
          * and timestamps. Sensitive information (full account numbers) is not returned.</p>
          *
          * @param accountId unique identifier of the financial account
-         * @return {@link FinancialAccountResponse} containing account details
+         * @return {@link FinancialAccount} containing account details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if account not found (404) or unauthorized (401)
          */
-        public FinancialAccountResponse lookup(String accountId) throws IOException, InterruptedException, ApiException {
+        public FinancialAccount lookup(String accountId) throws IOException, InterruptedException, ApiException {
             Map<String, String> body = new HashMap<>();
             body.put("account_id", accountId);
-            return client.request("POST", "/financial_accounts/lookup", body, FinancialAccountResponse.class);
+            return client.requestResource("/financial_accounts/lookup", body, "account", FinancialAccount.class);
         }
 
-        public FinancialAccountResponse reconnect(String accountId) throws IOException, InterruptedException, ApiException {
+        public FinancialAccount reconnect(String accountId) throws IOException, InterruptedException, ApiException {
             FinancialAccountLookupParams params = FinancialAccountLookupParams.builder().accountId(accountId).build();
-            return client.request("POST", "/financial_accounts/reconnect", params, FinancialAccountResponse.class);
+            return client.requestResource("/financial_accounts/reconnect", params, "account", FinancialAccount.class);
         }
 
         /**
@@ -1761,13 +1801,13 @@ public class Client {
          * must already exist and belong to an entity authorized to receive funds on your behalf.</p>
          *
          * @param params connection parameters including account identifier and authorization details
-         * @return {@link FinancialAccountResponse} with connected account information
+         * @return {@link FinancialAccount} with connected account information
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if account cannot be connected, invalid authorization, or unauthorized (401)
          */
-        public FinancialAccountResponse connect(FinancialAccountCreateParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/connect", params, FinancialAccountResponse.class);
+        public FinancialAccount connect(FinancialAccountCreateParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/connect", params, "account", FinancialAccount.class);
         }
 
         /**
@@ -1781,21 +1821,21 @@ public class Client {
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401) or not implemented (501)
          */
-        public Map<String, Object> archive(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/archive", payload, Map.class);
+        public FinancialAccount archive(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/archive", payload, "account", FinancialAccount.class);
         }
 
         /**
          * Retrieves a paginated list of financial accounts (POST /financial_accounts/page).
          *
          * @param params pagination parameters
-         * @return {@link FinancialAccountsPageResponse} with page metadata and accounts
+         * @return {@link FinancialAccountsPage} with page metadata and accounts
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401) or validation failed (422)
          */
-        public FinancialAccountsPageResponse page(PageFinancialAccountsParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/page", params, FinancialAccountsPageResponse.class);
+        public FinancialAccountsPage page(PageFinancialAccountsParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/page", params, "page", FinancialAccountsPage.class);
         }
 
         /**
@@ -1809,8 +1849,8 @@ public class Client {
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401) or not implemented (501)
          */
-        public Map<String, Object> verify(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/verify", payload, Map.class);
+        public FinancialAccount verify(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/verify", payload, "account", FinancialAccount.class);
         }
 
         /**
@@ -1819,45 +1859,45 @@ public class Client {
          * <p>All fields except account_id are optional. custom_data merges with existing data.</p>
          *
          * @param params update parameters including account_id and fields to update
-         * @return {@link FinancialAccountResponse} containing updated account details
+         * @return {@link FinancialAccount} containing updated account details
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid parameters (422) or unauthorized (401)
          */
-        public FinancialAccountResponse update(FinancialAccountUpdateParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/update", params, FinancialAccountResponse.class);
+        public FinancialAccount update(FinancialAccountUpdateParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/update", params, "account", FinancialAccount.class);
         }
 
         /**
          * Enables push configuration for payouts (POST /financial_accounts/enable_push).
          */
-        public Map<String, Object> enablePush(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/enable_push", params, Map.class);
+        public FinancialAccount enablePush(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/enable_push", params, "account", FinancialAccount.class);
         }
 
         /**
          * Disables push configuration for payouts (POST /financial_accounts/disable_push).
          */
-        public Map<String, Object> disablePush(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/disable_push", params, Map.class);
+        public FinancialAccount disablePush(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/disable_push", params, "account", FinancialAccount.class);
         }
 
         /**
          * Enables pull configuration for charges (POST /financial_accounts/enable_pull).
          */
-        public Map<String, Object> enablePull(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/enable_pull", params, Map.class);
+        public FinancialAccount enablePull(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/enable_pull", params, "account", FinancialAccount.class);
         }
 
         /**
          * Disables pull configuration for charges (POST /financial_accounts/disable_pull).
          */
-        public Map<String, Object> disablePull(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/disable_pull", params, Map.class);
+        public FinancialAccount disablePull(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/disable_pull", params, "account", FinancialAccount.class);
         }
 
-        public FinancialAccountResponse disconnect(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/financial_accounts/disconnect", params, FinancialAccountResponse.class);
+        public FinancialAccount disconnect(FinancialAccountToggleParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/financial_accounts/disconnect", params, "account", FinancialAccount.class);
         }
     }
 
@@ -1868,22 +1908,22 @@ public class Client {
             this.client = client;
         }
 
-        public CustomerResponse create(CreateCustomerParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/customers/create", params, CustomerResponse.class);
+        public Customer create(CreateCustomerParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/customers/create", params, "customer", Customer.class);
         }
 
-        public CustomerResponse lookup(String customerId) throws IOException, InterruptedException, ApiException {
+        public Customer lookup(String customerId) throws IOException, InterruptedException, ApiException {
             LookupCustomerParams p = new LookupCustomerParams();
             p.customerId = customerId;
-            return client.request("POST", "/customers/lookup", p, CustomerResponse.class);
+            return client.requestResource("/customers/lookup", p, "customer", Customer.class);
         }
 
-        public CustomerResponse update(UpdateCustomerParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/customers/update", params, CustomerResponse.class);
+        public Customer update(UpdateCustomerParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/customers/update", params, "customer", Customer.class);
         }
 
-        public CustomersPageResponse page(PageCustomersParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/customers/page", params, CustomersPageResponse.class);
+        public CustomersPage page(PageCustomersParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/customers/page", params, "page", CustomersPage.class);
         }
     }
 
@@ -1894,48 +1934,48 @@ public class Client {
             this.client = client;
         }
 
-        public ProductResponse create(CreateProductParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/products/create", params, ProductResponse.class);
+        public Product create(CreateProductParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/products/create", params, "product", Product.class);
         }
 
-        public AddProductPriceResponse addPrice(AddProductPriceParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/products/add_price", params, AddProductPriceResponse.class);
+        public ProductDefaultUnitPrice addPrice(AddProductPriceParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/products/add_price", params, "price", ProductDefaultUnitPrice.class);
         }
 
-        public ProductResponse setDefaultUnitPrice(SetDefaultUnitPriceParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/products/set_default_unit_price", params, ProductResponse.class);
+        public Product setDefaultUnitPrice(SetDefaultUnitPriceParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/products/set_default_unit_price", params, "product", Product.class);
         }
 
-        public ProductResponse lookup(String productId) throws IOException, InterruptedException, ApiException {
+        public Product lookup(String productId) throws IOException, InterruptedException, ApiException {
             LookupProductParams p = new LookupProductParams();
             p.productId = productId;
-            return client.request("POST", "/products/lookup", p, ProductResponse.class);
+            return client.requestResource("/products/lookup", p, "product", Product.class);
         }
 
-        public ProductResponse update(UpdateProductParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/products/update", params, ProductResponse.class);
+        public Product update(UpdateProductParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/products/update", params, "product", Product.class);
         }
 
-        public ProductResponse publish(String productId) throws IOException, InterruptedException, ApiException {
+        public Product publish(String productId) throws IOException, InterruptedException, ApiException {
             ProductActionParams p = new ProductActionParams();
             p.productId = productId;
-            return client.request("POST", "/products/publish", p, ProductResponse.class);
+            return client.requestResource("/products/publish", p, "product", Product.class);
         }
 
-        public ProductResponse unpublish(String productId) throws IOException, InterruptedException, ApiException {
+        public Product unpublish(String productId) throws IOException, InterruptedException, ApiException {
             ProductActionParams p = new ProductActionParams();
             p.productId = productId;
-            return client.request("POST", "/products/unpublish", p, ProductResponse.class);
+            return client.requestResource("/products/unpublish", p, "product", Product.class);
         }
 
-        public ProductResponse archive(String productId) throws IOException, InterruptedException, ApiException {
+        public Product archive(String productId) throws IOException, InterruptedException, ApiException {
             ProductActionParams p = new ProductActionParams();
             p.productId = productId;
-            return client.request("POST", "/products/archive", p, ProductResponse.class);
+            return client.requestResource("/products/archive", p, "product", Product.class);
         }
 
-        public PageProductsResponse page(PageProductsParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/products/page", params, PageProductsResponse.class);
+        public ProductPage page(PageProductsParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/products/page", params, "page", ProductPage.class);
         }
     }
 
@@ -1946,46 +1986,46 @@ public class Client {
             this.client = client;
         }
 
-        public PriceResponse create(CreatePriceParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/prices/create", params, PriceResponse.class);
+        public Price create(CreatePriceParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/create", params, "price", Price.class);
         }
 
-        public PriceResponse lookup(String priceId) throws IOException, InterruptedException, ApiException {
+        public Price lookup(String priceId) throws IOException, InterruptedException, ApiException {
             LookupPriceParams p = new LookupPriceParams();
             p.priceId = priceId;
-            return client.request("POST", "/prices/lookup", p, PriceResponse.class);
+            return client.requestResource("/prices/lookup", p, "price", Price.class);
         }
 
-        public PriceResponse update(UpdatePriceParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/prices/update", params, PriceResponse.class);
+        public Price update(UpdatePriceParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/update", params, "price", Price.class);
         }
 
-        public PriceResponse activate(String priceId) throws IOException, InterruptedException, ApiException {
+        public Price activate(String priceId) throws IOException, InterruptedException, ApiException {
             return activate(PriceActionParams.builder().priceId(priceId).build());
         }
 
-        public PriceResponse activate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/prices/activate", params, PriceResponse.class);
+        public Price activate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/activate", params, "price", Price.class);
         }
 
-        public PriceResponse deactivate(String priceId) throws IOException, InterruptedException, ApiException {
+        public Price deactivate(String priceId) throws IOException, InterruptedException, ApiException {
             return deactivate(PriceActionParams.builder().priceId(priceId).build());
         }
 
-        public PriceResponse deactivate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/prices/deactivate", params, PriceResponse.class);
+        public Price deactivate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/deactivate", params, "price", Price.class);
         }
 
-        public PriceResponse archive(String priceId) throws IOException, InterruptedException, ApiException {
+        public Price archive(String priceId) throws IOException, InterruptedException, ApiException {
             return archive(PriceActionParams.builder().priceId(priceId).build());
         }
 
-        public PriceResponse archive(PriceActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/prices/archive", params, PriceResponse.class);
+        public Price archive(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/archive", params, "price", Price.class);
         }
 
-        public PricePageResponse page(PagePricesParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/prices/page", params, PricePageResponse.class);
+        public PricePage page(PagePricesParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/page", params, "page", PricePage.class);
         }
     }
 
@@ -2003,13 +2043,13 @@ public class Client {
          * requirements. This endpoint is public and does not require authentication. Use it to build dynamic
          * checkout forms that adapt to the customer's country.</p>
          *
-         * @return {@link CountriesResponse} with country specifications
+         * @return {@link CountrySpecifications} with country specifications
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if the request fails (rare, as this is a public endpoint)
          */
-        public CountriesResponse countries() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/spec/countries", new HashMap<>(), CountriesResponse.class);
+        public CountrySpecifications countries() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/spec/countries", new HashMap<>(), "countries", CountrySpecifications.class);
         }
     }
 
@@ -2018,22 +2058,22 @@ public class Client {
         public AppsClient(Client client) { this.client = client; }
 
         /** Creates a Inttegro application. */
-        public CreateAppResponse create(CreateAppParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/apps/create", params, CreateAppResponse.class);
+        public App create(CreateAppParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/apps/create", params, "app", App.class);
         }
 
         /** Retrieves the application associated with the configured API key. */
-        public LookupAppResponse lookup() throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/apps/lookup", Map.of(), LookupAppResponse.class);
+        public App lookup() throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/apps/lookup", Map.of(), "app", App.class);
         }
 
         /** Updates one or more attributes of the configured API key's application. */
-        public UpdateAppResponse update(UpdateAppParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/apps/update", params, UpdateAppResponse.class);
+        public App update(UpdateAppParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/apps/update", params, "app", App.class);
         }
 
-        public UpdateAppResponse update(UpdateAppParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/apps/update", params, options, UpdateAppResponse.class);
+        public App update(UpdateAppParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/apps/update", params, options, "app", App.class);
         }
     }
 
@@ -2041,40 +2081,40 @@ public class Client {
         private final Client client;
         public KeysClient(Client client) { this.client = client; }
 
-        public GenerateSecretKeyResponse generate(GenerateSecretKeyParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/keys/generate", params, GenerateSecretKeyResponse.class);
+        public GeneratedSecretKey generate(GenerateSecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/keys/generate", params, "key", GeneratedSecretKey.class);
         }
 
-        public LookupSecretKeyResponse lookup(String secretKeyId) throws IOException, InterruptedException, ApiException {
+        public SecretKey lookup(String secretKeyId) throws IOException, InterruptedException, ApiException {
             return lookup(LookupSecretKeyParams.builder().secretKeyId(secretKeyId).build());
         }
 
-        public LookupSecretKeyResponse lookup(LookupSecretKeyParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/keys/lookup", params, LookupSecretKeyResponse.class);
+        public SecretKey lookup(LookupSecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/keys/lookup", params, "key", SecretKey.class);
         }
 
-        public PageSecretKeysResponse page(PageSecretKeysParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/keys/page", params, PageSecretKeysResponse.class);
+        public SecretKeyPage page(PageSecretKeysParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/keys/page", params, "page", SecretKeyPage.class);
         }
 
-        public UpdateSecretKeyResponse update(UpdateSecretKeyParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/keys/update", params, UpdateSecretKeyResponse.class);
+        public SecretKey update(UpdateSecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/keys/update", params, "key", SecretKey.class);
         }
 
-        public DestroySecretKeyResponse destroy(String secretKeyId) throws IOException, InterruptedException, ApiException {
+        public SecretKey destroy(String secretKeyId) throws IOException, InterruptedException, ApiException {
             return destroy(DestroySecretKeyParams.builder().secretKeyId(secretKeyId).build());
         }
 
-        public DestroySecretKeyResponse destroy(DestroySecretKeyParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/keys/destroy", params, DestroySecretKeyResponse.class);
+        public SecretKey destroy(DestroySecretKeyParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/keys/destroy", params, "key", SecretKey.class);
         }
 
-        public SecretKeyUsageResponse usage(String secretKeyId) throws IOException, InterruptedException, ApiException {
+        public SecretKeyUsage usage(String secretKeyId) throws IOException, InterruptedException, ApiException {
             return usage(SecretKeyUsageParams.builder().secretKeyId(secretKeyId).build());
         }
 
-        public SecretKeyUsageResponse usage(SecretKeyUsageParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/keys/usage", params, SecretKeyUsageResponse.class);
+        public SecretKeyUsage usage(SecretKeyUsageParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/keys/usage", params, SecretKeyUsage.class);
         }
     }
 
@@ -2082,32 +2122,32 @@ public class Client {
         private final Client client;
         public PurchaseIntentsClient(Client client) { this.client = client; }
 
-        public PurchaseIntentResponse create(CreatePurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/purchase_intents/create", params, PurchaseIntentResponse.class);
+        public PurchaseIntent create(CreatePurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/purchase_intents/create", params, "purchase_intent", PurchaseIntent.class);
         }
 
-        public PurchaseIntentResponse lookup(String id) throws IOException, InterruptedException, ApiException {
+        public PurchaseIntent lookup(String id) throws IOException, InterruptedException, ApiException {
             return lookup(LookupPurchaseIntentParams.builder().id(id).build());
         }
 
-        public PurchaseIntentResponse lookup(LookupPurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/purchase_intents/lookup", params, PurchaseIntentResponse.class);
+        public PurchaseIntent lookup(LookupPurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/purchase_intents/lookup", params, "purchase_intent", PurchaseIntent.class);
         }
 
-        public PagePurchaseIntentsResponse page(PagePurchaseIntentsParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/purchase_intents/page", params, PagePurchaseIntentsResponse.class);
+        public PurchaseIntentPage page(PagePurchaseIntentsParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/purchase_intents/page", params, "page", PurchaseIntentPage.class);
         }
 
-        public PurchaseIntentResponse update(UpdatePurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/purchase_intents/update", params, PurchaseIntentResponse.class);
+        public PurchaseIntent update(UpdatePurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/purchase_intents/update", params, "purchase_intent", PurchaseIntent.class);
         }
 
-        public PurchaseIntentResponse cancel(String id) throws IOException, InterruptedException, ApiException {
+        public PurchaseIntent cancel(String id) throws IOException, InterruptedException, ApiException {
             return cancel(CancelPurchaseIntentParams.builder().id(id).build());
         }
 
-        public PurchaseIntentResponse cancel(CancelPurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/purchase_intents/cancel", params, PurchaseIntentResponse.class);
+        public PurchaseIntent cancel(CancelPurchaseIntentParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/purchase_intents/cancel", params, "purchase_intent", PurchaseIntent.class);
         }
     }
 }

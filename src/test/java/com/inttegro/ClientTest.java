@@ -81,7 +81,7 @@ class ClientTest {
 
         Client client = new Client("sk_test_123", baseUrl, null);
         var resp = client.balances().get();
-        assertEquals(1000L, resp.balances.get("ghs").available.amount);
+        assertEquals(1000L, resp.get("ghs").available.amount);
     }
 
     @Test
@@ -118,8 +118,8 @@ class ClientTest {
 
         Client client = new Client("sk_test_123", baseUrl, null);
         var resp = client.payouts().cancel("po_123");
-        assertEquals("po_123", resp.payout.id);
-        assertEquals("canceled", resp.payout.status);
+        assertEquals("po_123", resp.id);
+        assertEquals("canceled", resp.status);
     }
 
     @Test
@@ -150,19 +150,19 @@ class ClientTest {
                         .build())
                 .build();
 
-        RefundResponse canonical = client.refunds().create(params);
+        Refund canonical = client.refunds().create(params);
         Refund alias = client.orders().refund(params);
-        RefundResponse canceled = client.refunds().cancel("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
-        RefundResponse lookedUp = client.refunds().lookup("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
-        RefundPageResponse page = client.refunds().page(RefundPageParams.builder().pageNumber(1).build());
+        Refund canceled = client.refunds().cancel("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
+        Refund lookedUp = client.refunds().lookup("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
+        RefundPage page = client.refunds().page(RefundPageParams.builder().pageNumber(1).build());
 
-        assertEquals("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd", canonical.refund.id);
-        assertEquals(RefundStatus.PENDING, canonical.refund.status);
-        assertEquals(2500L, canonical.refund.total.value);
-        assertEquals(canonical.refund.id, alias.id);
-        assertEquals(RefundStatus.CANCELED, canceled.refund.status);
-        assertEquals(canonical.refund.id, lookedUp.refund.id);
-        assertEquals(0, page.page.size);
+        assertEquals("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd", canonical.id);
+        assertEquals(RefundStatus.PENDING, canonical.status);
+        assertEquals(2500L, canonical.total.value);
+        assertEquals(canonical.id, alias.id);
+        assertEquals(RefundStatus.CANCELED, canceled.status);
+        assertEquals(canonical.id, lookedUp.id);
+        assertEquals(0, page.size);
         assertEquals(mapper.readTree(canonicalBody.get()), mapper.readTree(aliasBody.get()));
         assertEquals("item_returned", mapper.readTree(canonicalBody.get()).get("reason").asText());
         assertEquals("oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN", mapper.readTree(canonicalBody.get()).get("line_items").get(0).get("order_line_item_id").asText());
@@ -177,17 +177,17 @@ class ClientTest {
         server.start();
 
         Client client = new Client("sk_test_123", baseUrl, null);
-        CreateAppResponse created = client.apps().create(
+        App created = client.apps().create(
                 CreateAppParams.builder().name("My App").build()
         );
-        LookupAppResponse lookedUp = client.apps().lookup();
-        UpdateAppResponse updated = client.apps().update(
+        App lookedUp = client.apps().lookup();
+        App updated = client.apps().update(
                 UpdateAppParams.builder().alias("my-app").build()
         );
 
-        assertEquals("app_123", created.app.id);
-        assertEquals("app_123", lookedUp.app.id);
-        assertEquals("app_123", updated.app.id);
+        assertEquals("app_123", created.id);
+        assertEquals("app_123", lookedUp.id);
+        assertEquals("app_123", updated.id);
     }
 
     @Test
@@ -265,7 +265,7 @@ class ClientTest {
         server.createContext("/message_templates/create", exchange -> {
             idempotencyHeader.set(exchange.getRequestHeaders().getFirst("Idempotency-Key"));
             requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            byte[] bytes = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
+            byte[] bytes = "{\"message_template\":{\"id\":\"mt_123\",\"name\":\"welcome_sms\"}}".getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
             try (OutputStream os = exchange.getResponseBody()) {
@@ -306,7 +306,7 @@ class ClientTest {
         CreateProductParams create = new CreateProductParams();
         create.type = "physical";
         create.name = "T-Shirt";
-        assertEquals("prod_123", client.products().create(create).product.id);
+        assertEquals("prod_123", client.products().create(create).id);
 
         AddProductPriceParams add = new AddProductPriceParams();
         add.productId = "prod_123";
@@ -314,23 +314,23 @@ class ClientTest {
         add.amount.currency = "ghs";
         add.amount.value = 5000L;
         add.setAsDefault = true;
-        assertEquals("pr_123", client.products().addPrice(add).price.id);
+        assertEquals("pr_123", client.products().addPrice(add).id);
 
         SetDefaultUnitPriceParams setDefault = new SetDefaultUnitPriceParams();
         setDefault.productId = "prod_123";
         setDefault.priceId = "pr_123";
-        assertEquals("pr_123", client.products().setDefaultUnitPrice(setDefault).product.defaultUnitPrice.id);
+        assertEquals("pr_123", client.products().setDefaultUnitPrice(setDefault).defaultUnitPrice.id);
 
-        assertEquals("prod_123", client.products().lookup("prod_123").product.id);
-        assertEquals("prod_123", client.products().update(new UpdateProductParams()).product.id);
-        assertEquals("prod_123", client.products().publish("prod_123").product.id);
-        assertEquals("prod_123", client.products().unpublish("prod_123").product.id);
-        assertEquals("prod_123", client.products().archive("prod_123").product.id);
+        assertEquals("prod_123", client.products().lookup("prod_123").id);
+        assertEquals("prod_123", client.products().update(new UpdateProductParams()).id);
+        assertEquals("prod_123", client.products().publish("prod_123").id);
+        assertEquals("prod_123", client.products().unpublish("prod_123").id);
+        assertEquals("prod_123", client.products().archive("prod_123").id);
 
         PageProductsParams page = new PageProductsParams();
         page.pageNumber = 1;
         page.pageSize = 20;
-        assertEquals(1, client.products().page(page).page.number);
+        assertEquals(1, client.products().page(page).number);
     }
 
     private static class OkResponse {

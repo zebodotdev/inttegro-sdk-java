@@ -10,7 +10,7 @@ import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
 import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethodObject;
+import com.inttegro.paymentmethods.PaymentMethod;
 import com.inttegro.refunds.Refund;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ public class Payment {
     public String status;
     @JsonProperty("statement_descriptor") public String statementDescriptor;
     public Money amount;
-    @JsonProperty("payment_method") public PaymentMethodObject paymentMethod;
+    @JsonProperty("payment_method") public PaymentMethod paymentMethod;
     @JsonProperty("latest_attempt") public PaymentAttempt latestAttempt;
     @JsonProperty("next_action") public PaymentNextAction nextAction;
     @JsonProperty("balance_transaction") public com.inttegro.balances.BalanceTransaction balanceTransaction;

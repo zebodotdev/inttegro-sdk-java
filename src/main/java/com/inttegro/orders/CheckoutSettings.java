@@ -10,7 +10,7 @@ import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
 import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethodObject;
+import com.inttegro.paymentmethods.PaymentMethod;
 import com.inttegro.refunds.Refund;
 import java.util.ArrayList;
 import java.util.List;
