@@ -112,6 +112,20 @@ class ClientTest {
     }
 
     @Test
+    void createPriceSerializesAmountAsMoney() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        var params = com.inttegro.prices.CreatePriceParams.builder()
+                .productId("prod_123")
+                .amount(Money.of("ghs", 2500))
+                .build();
+
+        var body = mapper.valueToTree(params);
+        assertEquals("ghs", body.get("amount").get("currency").asText());
+        assertEquals(2500L, body.get("amount").get("value").asLong());
+        assertFalse(body.has("currency"));
+    }
+
+    @Test
     void payoutsCancelHitsEndpoint() throws Exception {
         server.createContext("/payouts/cancel", new JsonHandler(200, "{\"payout\":{\"id\":\"po_123\",\"status\":\"canceled\"}}"));
         server.start();
