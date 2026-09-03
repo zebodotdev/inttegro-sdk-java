@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 4.1.0 - 2026-09-03
+
+- Added the referenced product ID to returned catalog prices.
+
 ## 4.0.0 - 2026-09-03
 
 - Breaking: replaced the catch-all `ApiEnums` constants with native enums in their domain packages.

@@ -11,6 +11,8 @@ public class CatalogPrice {
     public String about;
     public Boolean active;
     public Amount nominal;
+    @JsonProperty("product_id")
+    public String productId;
     public Product product;
     @JsonProperty("created_at")
     public String createdAt;

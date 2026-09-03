@@ -130,6 +130,11 @@ class ClientTest {
                 "{\"currency\":\"ghs\",\"value\":3005}",
                 mapper.writeValueAsString(PriceParams.of(Currency.GHS, 3005))
         );
+        var catalogPrice = mapper.readValue(
+                "{\"id\":\"pr_123\",\"active\":true,\"nominal\":{\"currency\":\"ghs\",\"value\":3005},\"product_id\":\"prod_123\",\"created_at\":\"2026-09-02T12:00:00Z\"}",
+                com.inttegro.prices.CatalogPrice.class
+        );
+        assertEquals("prod_123", catalogPrice.productId);
         assertEquals("\"mtn\"", mapper.writeValueAsString(MobileMoneyNetwork.MTN));
     }
 
