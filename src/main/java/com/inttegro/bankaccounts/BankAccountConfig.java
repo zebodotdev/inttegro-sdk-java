@@ -1,7 +1,6 @@
-package com.inttegro.financialaccounts;
+package com.inttegro.bankaccounts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 
 public class BankAccountConfig {
     public String id;

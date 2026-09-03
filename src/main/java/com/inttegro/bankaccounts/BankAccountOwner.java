@@ -1,7 +1,4 @@
-package com.inttegro.financialaccounts;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
+package com.inttegro.bankaccounts;
 
 public class BankAccountOwner {
     public String name;

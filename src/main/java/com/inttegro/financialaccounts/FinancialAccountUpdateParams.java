@@ -1,6 +1,7 @@
 package com.inttegro.financialaccounts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.inttegro.bankaccounts.BankAccountOwner;
 import java.util.Map;
 
 public class FinancialAccountUpdateParams {

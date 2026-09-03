@@ -8,7 +8,7 @@ import com.inttegro.customers.CustomerData;
 import com.inttegro.customers.Shipping;
 import com.inttegro.paymentmethods.PaymentMethod;
 import com.inttegro.refunds.Refund;
-import com.inttegro.financialaccounts.WalletType;
+import com.inttegro.wallets.WalletType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

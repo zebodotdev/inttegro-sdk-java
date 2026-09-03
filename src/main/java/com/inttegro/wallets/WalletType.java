@@ -1,4 +1,4 @@
-package com.inttegro.financialaccounts;
+package com.inttegro.wallets;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

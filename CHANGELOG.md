@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 5.0.0 - 2026-09-03
+
+- Breaking: moved wallet types into `com.inttegro.wallets`.
+- Breaking: moved financial-account bank types into `com.inttegro.bankaccounts`.
+- Kept payment-method bank snapshots in `com.inttegro.paymentmethods` as a separate domain concept.
+
 ## 4.1.0 - 2026-09-03
 
 - Added the referenced product ID to returned catalog prices.
