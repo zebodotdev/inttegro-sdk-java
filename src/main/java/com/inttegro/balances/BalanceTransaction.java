@@ -1,7 +1,7 @@
 package com.inttegro.balances;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
+import com.inttegro.money.Amount;
 import java.util.Map;
 
 public class BalanceTransaction {
@@ -11,11 +11,11 @@ public class BalanceTransaction {
     @JsonProperty("refund_id") public String refundId;
     @JsonProperty("payout_id") public String payoutId;
     @JsonProperty("order_id") public String orderId;
-    public Money amount;
+    public Amount amount;
     @Deprecated
-    @JsonProperty("amount_expected") public Money amountExpected;
+    @JsonProperty("amount_expected") public Amount amountExpected;
     @Deprecated
-    @JsonProperty("amount_available") public Money amountAvailable;
+    @JsonProperty("amount_available") public Amount amountAvailable;
     @JsonProperty("available_at") public String availableAt;
     @JsonProperty("claimed_at") public String claimedAt;
     @JsonProperty("paid_at") public String paidAt;

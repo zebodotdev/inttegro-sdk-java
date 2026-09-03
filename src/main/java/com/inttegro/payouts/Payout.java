@@ -1,7 +1,7 @@
 package com.inttegro.payouts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
+import com.inttegro.money.Amount;
 import java.util.List;
 import java.util.Map;
 
@@ -9,8 +9,8 @@ public class Payout {
     public String id;
     @JsonProperty("application_id") public String applicationId;
     @JsonProperty("destination_id") public String destinationId;
-    public Money amount;
-    @JsonProperty("max_amount") public Money maxAmount;
+    public Amount amount;
+    @JsonProperty("max_amount") public Amount maxAmount;
     public PayoutStatus status;
     @JsonProperty("initiated_by") public String initiatedBy;
     @JsonProperty("execute_after") public String executeAfter;

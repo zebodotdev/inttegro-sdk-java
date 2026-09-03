@@ -6,24 +6,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inttegro.apps.*;
 import com.inttegro.balances.*;
-import com.inttegro.broadcasts.*;
 import com.inttegro.chimes.*;
-import com.inttegro.common.*;
 import com.inttegro.customers.*;
 import com.inttegro.filereferences.*;
 import com.inttegro.files.*;
 import com.inttegro.financialaccounts.*;
 import com.inttegro.keys.*;
 import com.inttegro.messages.*;
+import com.inttegro.money.*;
 import com.inttegro.otp.*;
 import com.inttegro.orders.*;
+import com.inttegro.payments.*;
 import com.inttegro.paymentmethods.*;
 import com.inttegro.payouts.*;
 import com.inttegro.prices.*;
 import com.inttegro.products.*;
 import com.inttegro.purchaseintents.*;
 import com.inttegro.refunds.*;
-import com.inttegro.schedules.*;
 import com.inttegro.specifications.*;
 
 import java.io.IOException;
@@ -54,7 +53,7 @@ import java.util.UUID;
      *     OrderCreateParams.builder()
      *       .customerData(CustomerData.builder().name("Akua").phoneNumber("+233...").build())
      *       .paymentMethodData(PaymentMethodData.mobileMoney(m -> m.network(MobileMoneyNetwork.MTN).accountNumber("0544...")))
-     *       .lineItem(OrderLineItem.product(p -> p.name("Subscription").type(ProductType.DIGITAL).price(Money.of("ghs", 5000)).quantity(1)))
+     *       .lineItem(OrderLineItemParams.product(p -> p.name("Subscription").type(ProductType.DIGITAL).price(PriceParams.of(Currency.GHS, 5000)).quantity(1)))
      *       .billingDetails(BillingDetails.builder().name("Akua").phoneNumber("+233...").build())
      *       .executePayment(true)
      *       .build()
@@ -1986,42 +1985,42 @@ public class Client {
             this.client = client;
         }
 
-        public Price create(CreatePriceParams params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/prices/create", params, "price", Price.class);
+        public CatalogPrice create(CatalogPriceParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/create", params, "price", CatalogPrice.class);
         }
 
-        public Price lookup(String priceId) throws IOException, InterruptedException, ApiException {
+        public CatalogPrice lookup(String priceId) throws IOException, InterruptedException, ApiException {
             LookupPriceParams p = new LookupPriceParams();
             p.priceId = priceId;
-            return client.requestResource("/prices/lookup", p, "price", Price.class);
+            return client.requestResource("/prices/lookup", p, "price", CatalogPrice.class);
         }
 
-        public Price update(UpdatePriceParams params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/prices/update", params, "price", Price.class);
+        public CatalogPrice update(UpdatePriceParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/update", params, "price", CatalogPrice.class);
         }
 
-        public Price activate(String priceId) throws IOException, InterruptedException, ApiException {
+        public CatalogPrice activate(String priceId) throws IOException, InterruptedException, ApiException {
             return activate(PriceActionParams.builder().priceId(priceId).build());
         }
 
-        public Price activate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/prices/activate", params, "price", Price.class);
+        public CatalogPrice activate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/activate", params, "price", CatalogPrice.class);
         }
 
-        public Price deactivate(String priceId) throws IOException, InterruptedException, ApiException {
+        public CatalogPrice deactivate(String priceId) throws IOException, InterruptedException, ApiException {
             return deactivate(PriceActionParams.builder().priceId(priceId).build());
         }
 
-        public Price deactivate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/prices/deactivate", params, "price", Price.class);
+        public CatalogPrice deactivate(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/deactivate", params, "price", CatalogPrice.class);
         }
 
-        public Price archive(String priceId) throws IOException, InterruptedException, ApiException {
+        public CatalogPrice archive(String priceId) throws IOException, InterruptedException, ApiException {
             return archive(PriceActionParams.builder().priceId(priceId).build());
         }
 
-        public Price archive(PriceActionParams params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/prices/archive", params, "price", Price.class);
+        public CatalogPrice archive(PriceActionParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/prices/archive", params, "price", CatalogPrice.class);
         }
 
         public PricePage page(PagePricesParams params) throws IOException, InterruptedException, ApiException {

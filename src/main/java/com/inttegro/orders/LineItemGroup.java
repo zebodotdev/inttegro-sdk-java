@@ -2,7 +2,7 @@ package com.inttegro.orders;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
+import com.inttegro.money.Amount;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
@@ -16,5 +16,5 @@ import java.util.function.Consumer;
 
 public class LineItemGroup {
     @JsonProperty("line_items") public List<OrderLineItem> lineItems;
-    public Money total;
+    public Amount total;
 }

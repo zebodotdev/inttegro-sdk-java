@@ -1,13 +1,12 @@
 package com.inttegro.purchaseintents;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
-import java.util.List;
+import com.inttegro.prices.PriceParams;
 
 public class PurchaseIntentPriceSelector {
     public String id;
-    public PurchaseIntentPriceAmount nominal;
-    public PurchaseIntentPriceSelector original;
+    public PriceParams nominal;
+    public PurchaseIntentOriginalPriceParams original;
     @JsonProperty("original_id")
     public String originalId;
 
@@ -16,8 +15,8 @@ public class PurchaseIntentPriceSelector {
     public static class Builder {
         private final PurchaseIntentPriceSelector price = new PurchaseIntentPriceSelector();
         public Builder id(String id) { price.id = id; return this; }
-        public Builder nominal(PurchaseIntentPriceAmount nominal) { price.nominal = nominal; return this; }
-        public Builder original(PurchaseIntentPriceSelector original) { price.original = original; return this; }
+        public Builder nominal(PriceParams nominal) { price.nominal = nominal; return this; }
+        public Builder original(PurchaseIntentOriginalPriceParams original) { price.original = original; return this; }
         public Builder originalId(String originalId) { price.originalId = originalId; return this; }
         public PurchaseIntentPriceSelector build() { return price; }
     }

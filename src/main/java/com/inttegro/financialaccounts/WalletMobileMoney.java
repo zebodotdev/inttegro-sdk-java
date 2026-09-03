@@ -1,7 +1,7 @@
 package com.inttegro.financialaccounts;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.MobileMoneyNetwork;
+import com.inttegro.paymentmethods.MobileMoneyNetwork;
 import java.util.Map;
 
 public class WalletMobileMoney {

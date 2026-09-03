@@ -14,7 +14,6 @@ public class UpdateProductParams {
     @JsonProperty("tax_code")
     public String taxCode;
     public ProductCategory category;
-    public ProductPrice price;
     public ProductShipment shipment;
     public ProductMediaItem[] media;
     public Map<String, String> attributes;
@@ -32,7 +31,6 @@ public class UpdateProductParams {
         public Builder about(String about) { params.about = about; return this; }
         public Builder taxCode(String taxCode) { params.taxCode = taxCode; return this; }
         public Builder category(ProductCategory category) { params.category = category; return this; }
-        public Builder price(ProductPrice price) { params.price = price; return this; }
         public Builder shipment(ProductShipment shipment) { params.shipment = shipment; return this; }
         public Builder media(ProductMediaItem[] media) { params.media = media; return this; }
         public Builder attributes(Map<String, String> attributes) { params.attributes = attributes; return this; }

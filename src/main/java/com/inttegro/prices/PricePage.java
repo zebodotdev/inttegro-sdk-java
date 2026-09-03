@@ -5,5 +5,5 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class PricePage {
     public Integer number;
     public Integer size;
-    public java.util.List<Price> prices;
+    public java.util.List<CatalogPrice> prices;
 }

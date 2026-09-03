@@ -1,7 +1,6 @@
 package com.inttegro.purchaseintents;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
 import java.util.List;
 
 public class PurchaseIntent {
@@ -24,5 +23,5 @@ public class PurchaseIntent {
     public String updatedAt;
     public PurchaseIntentActivityLog activity;
     public com.inttegro.products.Product product;
-    public com.inttegro.products.ProductPriceSummary price;
+    public PurchaseIntentPrice price;
 }

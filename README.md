@@ -36,12 +36,13 @@ Create and finalize an order, then send the customer to its hosted invoice URL:
 import com.inttegro.ApiException;
 import com.inttegro.Client;
 import com.inttegro.RequestMeta;
-import com.inttegro.common.Money;
+import com.inttegro.money.Currency;
 import com.inttegro.customers.CustomerData;
 import com.inttegro.orders.CheckoutSettings;
 import com.inttegro.orders.Order;
 import com.inttegro.orders.OrderCreateParams;
-import com.inttegro.orders.OrderLineItem;
+import com.inttegro.orders.OrderLineItemParams;
+import com.inttegro.prices.PriceParams;
 import com.inttegro.products.ProductType;
 
 public class CheckoutExample {
@@ -61,11 +62,11 @@ public class CheckoutExample {
               .redirectUrl("https://example.com/orders/complete")
               .cancelUrl("https://example.com/cart")
               .build())
-          .lineItem(OrderLineItem.product(product -> product
+          .lineItem(OrderLineItemParams.product(product -> product
               .type(ProductType.DIGITAL)
               .name("Monthly subscription")
               .quantity(1)
-              .price(Money.of("ghs", 5000))))
+              .price(PriceParams.of(Currency.GHS, 5000))))
           .build());
 
       if (order.invoice == null || order.invoice.format == null || order.invoice.format.web == null) {
@@ -87,7 +88,8 @@ Amounts use integer minor units: `5000` GHS is GHS 50.00. Reuse the same idempot
 Refunds target paid order line items and return money to the original payment method:
 
 ```java
-import com.inttegro.common.Money;
+import com.inttegro.money.AmountParams;
+import com.inttegro.money.Currency;
 import com.inttegro.refunds.CreateRefundLineItem;
 import com.inttegro.refunds.CreateRefundParams;
 import com.inttegro.refunds.RefundReason;
@@ -97,7 +99,7 @@ var refund = inttegro.refunds().create(CreateRefundParams.builder()
     .reason(RefundReason.ITEM_RETURNED)
     .lineItem(CreateRefundLineItem.builder()
         .orderLineItemId("oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN")
-        .refundAmount(Money.of("ghs", 2500))
+        .refundAmount(AmountParams.of(Currency.GHS, 2500))
         .build())
     .build());
 
@@ -113,7 +115,8 @@ The SDK covers orders and checkout, customers, products and prices, purchase int
 Java-specific features:
 
 - Typed request and domain types with fluent builders for common resources.
-- Native enums in each domain package for API enum values.
+- Domain packages mirror the API vocabulary: notification types live in `com.inttegro.chimes`, payment lifecycle types in `com.inttegro.payments`, and payment-method types in `com.inttegro.paymentmethods`.
+- Native enums live beside the domain types that use them.
 - JDK `HttpClient` transport with Jackson response mapping.
 - An injectable `HttpClient` and base URL for connection pools, proxies, tests, and timeouts.
 - A constructed client is safe to share across threads.

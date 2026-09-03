@@ -2,7 +2,7 @@ package com.inttegro.orders;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
+import com.inttegro.prices.Price;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
@@ -21,7 +21,7 @@ public class ProductLineItem {
     public String name;
     public String about;
     public Long quantity;
-    public Money price;
+    public Price price;
     public String reference;
     @JsonProperty("tax_code")
     public String taxCode;
@@ -37,7 +37,7 @@ public class ProductLineItem {
         public Builder name(String name) { item.name = name; return this; }
         public Builder about(String about) { item.about = about; return this; }
         public Builder quantity(long qty) { item.quantity = qty; return this; }
-        public Builder price(Money price) { item.price = price; return this; }
+        public Builder price(Price price) { item.price = price; return this; }
         public Builder reference(String ref) { item.reference = ref; return this; }
         public Builder taxCode(String tax) { item.taxCode = tax; return this; }
         public Builder customData(Map<String, String> data) { item.customData = data; return this; }

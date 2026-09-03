@@ -1,7 +1,7 @@
 package com.inttegro.purchaseintents;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
+import com.inttegro.money.Amount;
 import java.util.List;
 
 public class PurchaseIntentActivity {
@@ -17,7 +17,7 @@ public class PurchaseIntentActivity {
     @JsonProperty("variant_product_id")
     public String variantProductId;
     public Integer quantity;
-    public Money amount;
+    public Amount amount;
     @JsonProperty("order_id")
     public String orderId;
     @JsonProperty("payment_id")

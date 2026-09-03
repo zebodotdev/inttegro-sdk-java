@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
 import com.inttegro.customers.Shipping;
+import com.inttegro.payments.Payment;
+import com.inttegro.payments.PaymentStatus;
 import com.inttegro.refunds.Refund;
 
 import java.util.List;
@@ -26,7 +28,7 @@ public class Order {
     @JsonProperty("line_items") public List<OrderLineItem> lineItems;
     @JsonProperty("line_item_group") public LineItemGroup lineItemGroup;
     public Payment payment;
-    @JsonProperty("payment_status") public OrderPaymentStatus paymentStatus;
+    @JsonProperty("payment_status") public PaymentStatus paymentStatus;
     @JsonProperty("payment_method_id") public String paymentMethodId;
     @JsonProperty("statement_descriptor") public String statementDescriptor;
     @JsonProperty("checkout_settings") public CheckoutSettings checkoutSettings;

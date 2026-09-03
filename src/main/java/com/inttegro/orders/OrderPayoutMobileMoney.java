@@ -2,8 +2,7 @@ package com.inttegro.orders;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
-import com.inttegro.common.MobileMoneyNetwork;
+import com.inttegro.paymentmethods.MobileMoneyNetwork;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;

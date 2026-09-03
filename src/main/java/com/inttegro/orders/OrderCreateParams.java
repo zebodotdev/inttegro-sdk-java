@@ -4,7 +4,6 @@ import com.inttegro.RequestMeta;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
@@ -45,7 +44,7 @@ public class OrderCreateParams {
     @JsonProperty("receipt_number")
     public String receiptNumber;
     @JsonProperty("line_items")
-    public List<OrderLineItem> lineItems;
+    public List<OrderLineItemParams> lineItems;
     @JsonProperty("custom_data")
     public Map<String, String> customData;
     @JsonProperty("billing_details")
@@ -55,7 +54,7 @@ public class OrderCreateParams {
     public static Builder builder() { return new Builder(); }
     public static class Builder {
         private final OrderCreateParams params = new OrderCreateParams();
-        private final List<OrderLineItem> items = new ArrayList<>();
+        private final List<OrderLineItemParams> items = new ArrayList<>();
         public Builder requestMeta(RequestMeta meta) { params.requestMeta = meta; return this; }
         public Builder customerData(CustomerData customer) { params.customerData = customer; return this; }
         public Builder customerId(String customerId) { params.customerId = customerId; return this; }
@@ -71,7 +70,7 @@ public class OrderCreateParams {
         public Builder payoutSettings(OrderPayoutSettings settings) { params.payoutSettings = settings; return this; }
         public Builder number(String number) { params.number = number; return this; }
         public Builder receiptNumber(String receiptNumber) { params.receiptNumber = receiptNumber; return this; }
-        public Builder lineItem(OrderLineItem item) { this.items.add(item); return this; }
+        public Builder lineItem(OrderLineItemParams item) { this.items.add(item); return this; }
         public Builder customData(Map<String, String> data) { params.customData = data; return this; }
         public Builder billingDetails(BillingDetails details) { params.billingDetails = details; return this; }
         public Builder shipping(Shipping shipping) { params.shipping = shipping; return this; }

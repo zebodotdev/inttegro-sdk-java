@@ -2,7 +2,7 @@ package com.inttegro.orders;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.Money;
+import com.inttegro.money.Amount;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 
 public class ShippingLineItem {
     public String id;
-    public Money fee;
+    public Amount fee;
     @JsonProperty("tax_code")
     public String taxCode;
     @JsonProperty("custom_data")
@@ -27,7 +27,7 @@ public class ShippingLineItem {
     public static class Builder {
         private final ShippingLineItem item = new ShippingLineItem();
         public Builder id(String id) { item.id = id; return this; }
-        public Builder fee(Money fee) { item.fee = fee; return this; }
+        public Builder fee(Amount fee) { item.fee = fee; return this; }
         public Builder taxCode(String taxCode) { item.taxCode = taxCode; return this; }
         public Builder customData(Map<String, String> customData) { item.customData = customData; return this; }
         public ShippingLineItem build() { return item; }

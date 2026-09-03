@@ -16,7 +16,6 @@ public class Product {
     @JsonProperty("tax_code")
     public String taxCode;
     public ProductCategory category;
-    public ProductPrice price;
     @JsonProperty("default_unit_price")
     public ProductDefaultUnitPrice defaultUnitPrice;
     public List<ProductPriceSummary> prices;

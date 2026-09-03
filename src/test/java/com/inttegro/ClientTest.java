@@ -10,8 +10,11 @@ import org.junit.jupiter.api.Test;
 
 import com.inttegro.apps.*;
 import com.inttegro.balances.*;
-import com.inttegro.common.Money;
+import com.inttegro.money.AmountParams;
+import com.inttegro.money.Currency;
 import com.inttegro.orders.*;
+import com.inttegro.paymentmethods.MobileMoneyNetwork;
+import com.inttegro.prices.PriceParams;
 import com.inttegro.products.*;
 import com.inttegro.refunds.*;
 
@@ -88,7 +91,7 @@ class ClientTest {
     void balanceTransactionsDeserializeSemanticSourcesAndOrderEmbedding() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         BalanceTransaction payment = mapper.readValue(
-                "{\"id\":\"bt_payment\",\"type\":\"payment\",\"payment_id\":\"py_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"GHS\",\"value\":2500},\"created_at\":\"2026-08-31T12:00:00Z\"}",
+                "{\"id\":\"bt_payment\",\"type\":\"payment\",\"payment_id\":\"py_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"ghs\",\"value\":2500},\"created_at\":\"2026-08-31T12:00:00Z\"}",
                 BalanceTransaction.class
         );
         assertEquals(BalanceTransactionType.PAYMENT, payment.type);
@@ -97,7 +100,7 @@ class ClientTest {
         assertEquals(2500L, payment.amount.value);
 
         BalanceTransaction refund = mapper.readValue(
-                "{\"id\":\"bt_refund\",\"type\":\"refund\",\"refund_id\":\"rf_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"GHS\",\"value\":500},\"created_at\":\"2026-08-31T12:01:00Z\"}",
+                "{\"id\":\"bt_refund\",\"type\":\"refund\",\"refund_id\":\"rf_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"ghs\",\"value\":500},\"created_at\":\"2026-08-31T12:01:00Z\"}",
                 BalanceTransaction.class
         );
         assertEquals(BalanceTransactionType.REFUND, refund.type);
@@ -105,24 +108,29 @@ class ClientTest {
         assertNull(refund.paymentId);
 
         Order order = mapper.readValue(
-                "{\"id\":\"or_123\",\"payment\":{\"id\":\"py_123\",\"balance_transaction\":{\"id\":\"bt_payment\",\"type\":\"payment\",\"payment_id\":\"py_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"GHS\",\"value\":2500},\"created_at\":\"2026-08-31T12:00:00Z\"}}}",
+                "{\"id\":\"or_123\",\"payment\":{\"id\":\"py_123\",\"balance_transaction\":{\"id\":\"bt_payment\",\"type\":\"payment\",\"payment_id\":\"py_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"ghs\",\"value\":2500},\"created_at\":\"2026-08-31T12:00:00Z\"}}}",
                 Order.class
         );
         assertEquals(BalanceTransactionType.PAYMENT, order.payment.balanceTransaction.type);
     }
 
     @Test
-    void createPriceSerializesAmountAsMoney() throws Exception {
+    void createCatalogPriceSerializesNestedAmount() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        var params = com.inttegro.prices.CreatePriceParams.builder()
+        var params = com.inttegro.prices.CatalogPriceParams.builder()
                 .productId("prod_123")
-                .amount(Money.of("ghs", 2500))
+                .amount(AmountParams.of(Currency.GHS, 2500))
                 .build();
 
         var body = mapper.valueToTree(params);
         assertEquals("ghs", body.get("amount").get("currency").asText());
         assertEquals(2500L, body.get("amount").get("value").asLong());
         assertFalse(body.has("currency"));
+        assertEquals(
+                "{\"currency\":\"ghs\",\"value\":3005}",
+                mapper.writeValueAsString(PriceParams.of(Currency.GHS, 3005))
+        );
+        assertEquals("\"mtn\"", mapper.writeValueAsString(MobileMoneyNetwork.MTN));
     }
 
     @Test
@@ -158,7 +166,7 @@ class ClientTest {
                 .requestMeta(RequestMeta.withIdempotencyKey("refund_contract_001"))
                 .lineItem(CreateRefundLineItem.builder()
                         .orderLineItemId("oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN")
-                        .refundAmount(Money.of("ghs", 2500))
+                        .refundAmount(AmountParams.of(Currency.GHS, 2500))
                         .reason(RefundReason.ITEM_NOT_AS_DESCRIBED)
                         .reasonDetails("Wrong size")
                         .build())
@@ -324,9 +332,7 @@ class ClientTest {
 
         AddProductPriceParams add = new AddProductPriceParams();
         add.productId = "prod_123";
-        add.amount = new ProductPriceAmount();
-        add.amount.currency = "ghs";
-        add.amount.value = 5000L;
+        add.amount = AmountParams.of(Currency.GHS, 5000);
         add.setAsDefault = true;
         assertEquals("pr_123", client.products().addPrice(add).id);
 

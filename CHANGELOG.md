@@ -5,9 +5,12 @@
 ## 4.0.0 - 2026-09-03
 
 - Breaking: replaced the catch-all `ApiEnums` constants with native enums in their domain packages.
+- Breaking: consolidated Chime, broadcast, and schedule types in `com.inttegro.chimes`.
+- Breaking: moved payment lifecycle types from `com.inttegro.orders` to `com.inttegro.payments` and payment-method constants to `com.inttegro.paymentmethods`.
+- Breaking: replaced the catch-all `com.inttegro.common` package with the focused `com.inttegro.money` package.
 - Typed enum-backed request and response fields instead of exposing raw strings.
 - Added typed OTP request builders and nested verification and transmission objects.
-- Corrected price creation amounts to use `common.Money`.
+- Separated request `AmountParams` and `PriceParams` from returned `Amount` and `Price` values.
 
 ## 3.0.1 - 2026-09-03
 
