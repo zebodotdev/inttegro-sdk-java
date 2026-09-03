@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.inttegro</groupId>
     <artifactId>inttegro-sdk-java</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <name>Inttegro Java SDK</name>
     <description>Official Java SDK for the Inttegro API</description>
     <url>https://github.com/zebodotdev/inttegro-sdk-java</url>

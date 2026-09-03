@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 3.0.1 - 2026-09-03
+
+- Corrected the transport user agent and installation examples to match the released package.
+
 ## 3.0.0 - 2026-09-03
 
 - Breaking: resource methods now return concrete domain objects and pages instead of response wrapper classes.
