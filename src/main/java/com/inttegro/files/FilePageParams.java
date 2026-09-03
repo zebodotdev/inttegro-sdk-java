@@ -15,7 +15,7 @@ public class FilePageParams {
     @JsonProperty("page_size")
     public Integer pageSize;
     public String purpose;
-    public String status;
+    public FileStatus status;
 
     public static Builder builder() { return new Builder(); }
 
@@ -26,7 +26,7 @@ public class FilePageParams {
         public Builder pageNumber(Integer pageNumber) { params.pageNumber = pageNumber; return this; }
         public Builder pageSize(Integer pageSize) { params.pageSize = pageSize; return this; }
         public Builder purpose(String purpose) { params.purpose = purpose; return this; }
-        public Builder status(String status) { params.status = status; return this; }
+        public Builder status(FileStatus status) { params.status = status; return this; }
         public FilePageParams build() { return params; }
     }
 }

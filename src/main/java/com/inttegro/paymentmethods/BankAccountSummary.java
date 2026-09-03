@@ -1,11 +1,11 @@
 package com.inttegro.paymentmethods;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.PaymentMethodType;
+import com.inttegro.financialaccounts.BankAccountType;
 import java.util.Map;
 
 public class BankAccountSummary {
     @JsonProperty("ghana_bank_account")
     public GhanaBankAccountSummary ghanaBankAccount;
-    public String type;
+    public BankAccountType type;
 }

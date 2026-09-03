@@ -133,7 +133,7 @@ class ClientTest {
         Client client = new Client("sk_test_123", baseUrl, null);
         var resp = client.payouts().cancel("po_123");
         assertEquals("po_123", resp.id);
-        assertEquals("canceled", resp.status);
+        assertEquals(com.inttegro.payouts.PayoutStatus.CANCELED, resp.status);
     }
 
     @Test
@@ -318,7 +318,7 @@ class ClientTest {
         Client client = new Client("sk_test_123", baseUrl, null);
 
         CreateProductParams create = new CreateProductParams();
-        create.type = "physical";
+        create.type = ProductType.PHYSICAL;
         create.name = "T-Shirt";
         assertEquals("prod_123", client.products().create(create).id);
 

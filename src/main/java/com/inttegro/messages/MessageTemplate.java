@@ -8,10 +8,10 @@ public final class MessageTemplate {
     public String id;
     public String name;
     public String about;
-    public String channel;
+    public MessageTemplateChannel channel;
     public String purpose;
     public String locale;
-    public String status;
+    public MessageTemplateStatus status;
     public Map<String, Object> sms;
     public Map<String, Object> email;
     public List<Map<String, Object>> variables;

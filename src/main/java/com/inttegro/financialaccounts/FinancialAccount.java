@@ -6,7 +6,7 @@ import java.util.Map;
 public class FinancialAccount {
     public String id;
     public String label;
-    public String type;
+    public FinancialAccountType type;
     public String reference;
     public String currency;
     public String description;

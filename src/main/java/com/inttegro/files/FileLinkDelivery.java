@@ -10,7 +10,7 @@ public class FileLinkDelivery {
     public String contentType;
     public String disposition;
     public String filename;
-    public String mode;
+    public FileLinkDeliveryMode mode;
 
     public static Builder builder() { return new Builder(); }
 
@@ -19,7 +19,7 @@ public class FileLinkDelivery {
         public Builder contentType(String contentType) { delivery.contentType = contentType; return this; }
         public Builder disposition(String disposition) { delivery.disposition = disposition; return this; }
         public Builder filename(String filename) { delivery.filename = filename; return this; }
-        public Builder mode(String mode) { delivery.mode = mode; return this; }
+        public Builder mode(FileLinkDeliveryMode mode) { delivery.mode = mode; return this; }
         public FileLinkDelivery build() { return delivery; }
     }
 }

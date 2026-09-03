@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class FinancialAccountCreateParams {
     public String label;
-    public String type;
+    public FinancialAccountType type;
     public String reference;
     public String currency;
     public String description;
@@ -22,7 +22,7 @@ public class FinancialAccountCreateParams {
     public static class Builder {
         private final FinancialAccountCreateParams params = new FinancialAccountCreateParams();
         public Builder label(String label) { params.label = label; return this; }
-        public Builder type(String type) { params.type = type; return this; }
+        public Builder type(FinancialAccountType type) { params.type = type; return this; }
         public Builder reference(String reference) { params.reference = reference; return this; }
         public Builder currency(String currency) { params.currency = currency; return this; }
         public Builder description(String description) { params.description = description; return this; }

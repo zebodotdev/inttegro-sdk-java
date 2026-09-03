@@ -7,7 +7,7 @@ public class GeneratedSecretKey {
     public String id;
     public String label;
     @JsonProperty("token_type")
-    public String tokenType;
+    public SecretKeyTokenType tokenType;
     @JsonProperty("issued_at")
     public String issuedAt;
     public String token;

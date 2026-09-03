@@ -8,7 +8,7 @@ public class PurchaseIntentActivity {
     public String id;
     @JsonProperty("purchase_intent_id")
     public String purchaseIntentId;
-    public String type;
+    public PurchaseIntentActivityType type;
     public String source;
     public PurchaseIntentActivityAttribution attribution;
     public PurchaseIntentActivityVisitor visitor;

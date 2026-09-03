@@ -6,7 +6,7 @@ import java.util.Map;
 public final class FileLink {
     public String id;
     @JsonProperty("file_id") public String fileId;
-    public String status;
+    public FileLinkStatus status;
     @JsonProperty("expires_at") public String expiresAt;
     @JsonProperty("created_at") public String createdAt;
     @JsonProperty("revoked_at") public String revokedAt;

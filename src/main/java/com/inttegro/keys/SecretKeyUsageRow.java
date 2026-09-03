@@ -9,5 +9,5 @@ public class SecretKeyUsageRow {
     @JsonProperty("occurred_at")
     public String occurredAt;
     @JsonProperty("auth_result")
-    public String authResult;
+    public SecretKeyAuthResult authResult;
 }

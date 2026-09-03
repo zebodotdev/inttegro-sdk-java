@@ -11,7 +11,7 @@ public class Payout {
     @JsonProperty("destination_id") public String destinationId;
     public Money amount;
     @JsonProperty("max_amount") public Money maxAmount;
-    public String status;
+    public PayoutStatus status;
     @JsonProperty("initiated_by") public String initiatedBy;
     @JsonProperty("execute_after") public String executeAfter;
     @JsonProperty("scheduled_at") public String scheduledAt;

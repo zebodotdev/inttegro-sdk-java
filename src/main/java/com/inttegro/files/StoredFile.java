@@ -6,8 +6,8 @@ import java.util.Map;
 public final class StoredFile {
     public String id;
     public String purpose;
-    public String status;
-    @JsonProperty("scan_status") public String scanStatus;
+    public FileStatus status;
+    @JsonProperty("scan_status") public FileScanStatus scanStatus;
     public String name;
     public String filename;
     @JsonProperty("content_type") public String contentType;

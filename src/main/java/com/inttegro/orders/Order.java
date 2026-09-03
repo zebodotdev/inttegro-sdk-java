@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class Order {
     public String id;
-    public String status;
+    public OrderStatus status;
     public String number;
     @JsonProperty("receipt_number") public String receiptNumber;
     @JsonProperty("customer_id") public String customerId;
@@ -26,7 +26,7 @@ public class Order {
     @JsonProperty("line_items") public List<OrderLineItem> lineItems;
     @JsonProperty("line_item_group") public LineItemGroup lineItemGroup;
     public Payment payment;
-    @JsonProperty("payment_status") public String paymentStatus;
+    @JsonProperty("payment_status") public OrderPaymentStatus paymentStatus;
     @JsonProperty("payment_method_id") public String paymentMethodId;
     @JsonProperty("statement_descriptor") public String statementDescriptor;
     @JsonProperty("checkout_settings") public CheckoutSettings checkoutSettings;

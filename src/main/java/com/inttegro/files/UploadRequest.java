@@ -6,7 +6,7 @@ import java.util.Map;
 public final class UploadRequest {
     public String id;
     public String purpose;
-    public String status;
+    public UploadRequestStatus status;
     @JsonProperty("upload_url") public String uploadUrl;
     @JsonProperty("expires_at") public String expiresAt;
     @JsonProperty("created_at") public String createdAt;

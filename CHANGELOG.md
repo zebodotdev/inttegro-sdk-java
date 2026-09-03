@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 4.0.0 - 2026-09-03
+
+- Breaking: replaced the catch-all `ApiEnums` constants with native enums in their domain packages.
+- Typed enum-backed request and response fields instead of exposing raw strings.
+- Added typed OTP request builders and nested verification and transmission objects.
+- Corrected price creation amounts to use `common.Money`.
+
 ## 3.0.1 - 2026-09-03
 
 - Corrected the transport user agent and installation examples to match the released package.

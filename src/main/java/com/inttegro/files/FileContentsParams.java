@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 public class FileContentsParams {
-    public String disposition;
+    public FileDisposition disposition;
+    public FileDelivery delivery;
     @JsonProperty("file_id")
     public String fileId;
 
@@ -14,7 +15,8 @@ public class FileContentsParams {
 
     public static class Builder {
         private final FileContentsParams params = new FileContentsParams();
-        public Builder disposition(String disposition) { params.disposition = disposition; return this; }
+        public Builder disposition(FileDisposition disposition) { params.disposition = disposition; return this; }
+        public Builder delivery(FileDelivery delivery) { params.delivery = delivery; return this; }
         public Builder fileId(String fileId) { params.fileId = fileId; return this; }
         public FileContentsParams build() { return params; }
     }

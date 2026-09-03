@@ -17,7 +17,7 @@ public class PurchaseIntent {
     public Boolean adjustableQuantity;
     @JsonProperty("allow_variants")
     public Boolean allowVariants;
-    public String status;
+    public PurchaseIntentStatus status;
     @JsonProperty("created_at")
     public String createdAt;
     @JsonProperty("updated_at")

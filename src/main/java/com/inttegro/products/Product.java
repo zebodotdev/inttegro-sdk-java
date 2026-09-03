@@ -8,7 +8,7 @@ public class Product {
     public String id;
     @JsonProperty("application_id")
     public String applicationId;
-    public String type;
+    public ProductType type;
     public String reference;
     public String name;
     public String description;

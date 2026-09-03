@@ -2,9 +2,6 @@ package com.inttegro.orders;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.ChimeRecipientType;
-import com.inttegro.common.LineItemType;
-import com.inttegro.common.PaymentMethodType;
 import com.inttegro.common.Money;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
@@ -19,7 +16,7 @@ import java.util.function.Consumer;
 
 public class Payment {
     public String id;
-    public String status;
+    public OrderPaymentStatus status;
     @JsonProperty("statement_descriptor") public String statementDescriptor;
     public Money amount;
     @JsonProperty("payment_method") public PaymentMethod paymentMethod;

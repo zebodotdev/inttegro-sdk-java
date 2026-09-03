@@ -53,8 +53,8 @@ import java.util.UUID;
      * var created = client.orders().create(
      *     OrderCreateParams.builder()
      *       .customerData(CustomerData.builder().name("Akua").phoneNumber("+233...").build())
-     *       .paymentMethodData(PaymentMethodData.mobileMoney(m -> m.network("mtn").accountNumber("0544...")))
-     *       .lineItem(OrderLineItem.product(p -> p.name("Subscription").type("digital").price(Money.of("ghs", 5000)).quantity(1)))
+     *       .paymentMethodData(PaymentMethodData.mobileMoney(m -> m.network(MobileMoneyNetwork.MTN).accountNumber("0544...")))
+     *       .lineItem(OrderLineItem.product(p -> p.name("Subscription").type(ProductType.DIGITAL).price(Money.of("ghs", 5000)).quantity(1)))
      *       .billingDetails(BillingDetails.builder().name("Akua").phoneNumber("+233...").build())
      *       .executePayment(true)
      *       .build()
@@ -67,7 +67,7 @@ import java.util.UUID;
      * Thread safety: immutable after construction; share freely across goroutines/threads.
      */
 public class Client {
-    public static final String VERSION = "3.0.2";
+    public static final String VERSION = "4.0.0";
 
     private static final String DEFAULT_BASE_URL = "https://api.inttegro.com";
     private static final String USER_AGENT = "inttegro-sdk-java/" + VERSION;
@@ -1323,14 +1323,14 @@ public class Client {
          * <p>Creates a new OTP transaction and sends the verification code via SMS or email. Returns a
          * transaction identifier that must be used with the verify endpoint to validate the code.</p>
          *
-         * @param payload initiation parameters including recipient contact and optional settings
-         * @return map containing transaction information and delivery status
+         * @param params initiation parameters including recipient contact and optional settings
+         * @return the initiated OTP transaction
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid parameters or delivery fails
          */
-        public OtpTransaction initiate(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/otp/initiate", payload, "transaction", OtpTransaction.class);
+        public OtpTransaction initiate(InitiateOtpParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/otp/initiate", params, "transaction", OtpTransaction.class);
         }
 
         /**
@@ -1339,24 +1339,24 @@ public class Client {
          * <p>Validates the OTP code provided by the user against the session. Returns verification status
          * and any associated data. Failed verifications may allow retries up to a maximum attempt limit.</p>
          *
-         * @param payload verification parameters including session identifier and OTP code
-         * @return map containing verification result and status
+         * @param params verification parameters including transaction identifier and OTP code
+         * @return the verification attempt and updated transaction
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if session invalid, code incorrect, or maximum attempts exceeded
          */
-        public OtpVerification verify(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.request("POST", "/otp/verify", payload, OtpVerification.class);
+        public OtpVerification verify(VerifyOtpParams params) throws IOException, InterruptedException, ApiException {
+            return client.request("POST", "/otp/verify", params, OtpVerification.class);
         }
 
         /**
          * Retrieves an existing OTP transaction (POST /otp/lookup).
          *
-         * @param payload lookup parameters including transaction_id
-         * @return map containing transaction information
+         * @param params lookup parameters including the transaction identifier
+         * @return the OTP transaction
          */
-        public OtpTransaction lookup(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/otp/lookup", payload, "transaction", OtpTransaction.class);
+        public OtpTransaction lookup(LookupOtpParams params) throws IOException, InterruptedException, ApiException {
+            return client.requestResource("/otp/lookup", params, "transaction", OtpTransaction.class);
         }
 
         /**
@@ -1372,8 +1372,8 @@ public class Client {
         /**
          * Backwards-compatible alias for initiate().
          */
-        public OtpTransaction initialize(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return initiate(payload);
+        public OtpTransaction initialize(InitiateOtpParams params) throws IOException, InterruptedException, ApiException {
+            return initiate(params);
         }
     }
 

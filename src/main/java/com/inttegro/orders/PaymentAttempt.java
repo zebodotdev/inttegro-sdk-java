@@ -2,9 +2,6 @@ package com.inttegro.orders;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.ChimeRecipientType;
-import com.inttegro.common.LineItemType;
-import com.inttegro.common.PaymentMethodType;
 import com.inttegro.common.Money;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
@@ -21,7 +18,7 @@ public class PaymentAttempt {
     @JsonProperty("payment_method_type") public String paymentMethodType;
     @JsonProperty("payment_method_id") public String paymentMethodId;
     public String reference;
-    public String status;
+    public PaymentAttemptStatus status;
     @JsonProperty("initiated_at") public String initiatedAt;
     @JsonProperty("succeeded_at") public String succeededAt;
     @JsonProperty("failed_at") public String failedAt;

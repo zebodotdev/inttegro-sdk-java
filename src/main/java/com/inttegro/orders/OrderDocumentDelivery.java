@@ -2,9 +2,6 @@ package com.inttegro.orders;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.common.ChimeRecipientType;
-import com.inttegro.common.LineItemType;
-import com.inttegro.common.PaymentMethodType;
 import com.inttegro.common.Money;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
@@ -18,10 +15,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class OrderDocumentDelivery {
-    @JsonProperty("document_kind") public String documentKind;
+    @JsonProperty("document_kind") public OrderDocumentKind documentKind;
     @JsonProperty("document_url") public String documentUrl;
-    @JsonProperty("sent_channels") public List<String> sentChannels;
-    @JsonProperty("failed_channels") public List<String> failedChannels;
+    @JsonProperty("sent_channels") public List<DeliveryChannel> sentChannels;
+    @JsonProperty("failed_channels") public List<DeliveryChannel> failedChannels;
     public List<OrderDocumentDeliveryAttempt> deliveries;
     public List<OrderDocumentDeliveryAttempt> failures;
 }

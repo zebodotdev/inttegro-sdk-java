@@ -12,7 +12,7 @@ public class UploadRequestPageParams {
     public Integer pageSize;
     public String purpose;
     public ResourceRef resource;
-    public String status;
+    public UploadRequestStatus status;
 
     public static Builder builder() { return new Builder(); }
 
@@ -22,7 +22,7 @@ public class UploadRequestPageParams {
         public Builder pageSize(Integer pageSize) { params.pageSize = pageSize; return this; }
         public Builder purpose(String purpose) { params.purpose = purpose; return this; }
         public Builder resource(ResourceRef resource) { params.resource = resource; return this; }
-        public Builder status(String status) { params.status = status; return this; }
+        public Builder status(UploadRequestStatus status) { params.status = status; return this; }
         public UploadRequestPageParams build() { return params; }
     }
 }

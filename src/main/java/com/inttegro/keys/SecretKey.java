@@ -7,14 +7,14 @@ public class SecretKey {
     public String id;
     public String label;
     @JsonProperty("token_type")
-    public String tokenType;
+    public SecretKeyTokenType tokenType;
     @JsonProperty("issued_at")
     public String issuedAt;
     @JsonProperty("updated_at")
     public String updatedAt;
     @JsonProperty("expires_at")
     public String expiresAt;
-    public String status;
+    public SecretKeyStatus status;
     public Boolean active;
     @JsonProperty("revoked_at")
     public String revokedAt;

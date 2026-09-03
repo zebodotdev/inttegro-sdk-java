@@ -16,7 +16,7 @@ Requires Java 17 or newer.
 <dependency>
   <groupId>com.inttegro</groupId>
   <artifactId>inttegro-sdk-java</artifactId>
-  <version>3.0.2</version>
+  <version>4.0.0</version>
 </dependency>
 ```
 
@@ -35,7 +35,6 @@ Create and finalize an order, then send the customer to its hosted invoice URL:
 ```java
 import com.inttegro.ApiException;
 import com.inttegro.Client;
-import com.inttegro.ApiEnums;
 import com.inttegro.RequestMeta;
 import com.inttegro.common.Money;
 import com.inttegro.customers.CustomerData;
@@ -43,6 +42,7 @@ import com.inttegro.orders.CheckoutSettings;
 import com.inttegro.orders.Order;
 import com.inttegro.orders.OrderCreateParams;
 import com.inttegro.orders.OrderLineItem;
+import com.inttegro.products.ProductType;
 
 public class CheckoutExample {
   public static void main(String[] args) throws Exception {
@@ -62,7 +62,7 @@ public class CheckoutExample {
               .cancelUrl("https://example.com/cart")
               .build())
           .lineItem(OrderLineItem.product(product -> product
-              .type(ApiEnums.ProductType.DIGITAL)
+              .type(ProductType.DIGITAL)
               .name("Monthly subscription")
               .quantity(1)
               .price(Money.of("ghs", 5000))))
@@ -92,7 +92,7 @@ import com.inttegro.refunds.CreateRefundLineItem;
 import com.inttegro.refunds.CreateRefundParams;
 import com.inttegro.refunds.RefundReason;
 
-var result = inttegro.refunds().create(CreateRefundParams.builder()
+var refund = inttegro.refunds().create(CreateRefundParams.builder()
     .orderId("or_0123456789abcdefghijklmnopqrstuvwxyzABCD")
     .reason(RefundReason.ITEM_RETURNED)
     .lineItem(CreateRefundLineItem.builder()
@@ -101,7 +101,7 @@ var result = inttegro.refunds().create(CreateRefundParams.builder()
         .build())
     .build());
 
-System.out.println(result.refund.id + " " + result.refund.status);
+System.out.println(refund.id + " " + refund.status);
 ```
 
 Use `refunds().cancel`, `refunds().lookup`, and `refunds().page` to manage the refund lifecycle. `orders().refund` remains a deprecated compatibility alias and returns the created `Refund` directly.
@@ -113,7 +113,7 @@ The SDK covers orders and checkout, customers, products and prices, purchase int
 Java-specific features:
 
 - Typed request and domain types with fluent builders for common resources.
-- Public constants for API enum values.
+- Native enums in each domain package for API enum values.
 - JDK `HttpClient` transport with Jackson response mapping.
 - An injectable `HttpClient` and base URL for connection pools, proxies, tests, and timeouts.
 - A constructed client is safe to share across threads.
@@ -127,7 +127,7 @@ The GitHub release for each version is the canonical record. It contains the exa
 
 ```bash
 sha256sum --check SHA256SUMS
-gh attestation verify inttegro-sdk-java-3.0.2.jar \
+gh attestation verify inttegro-sdk-java-4.0.0.jar \
   --repo zebodotdev/inttegro-sdk-java
 ```
 
