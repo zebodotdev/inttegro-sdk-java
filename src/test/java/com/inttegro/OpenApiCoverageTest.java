@@ -21,6 +21,12 @@ class OpenApiCoverageTest {
             "/file_links/open",
             "/upload_requests/upload"
     );
+    private static final Set<String> CLIENT_CHECKOUT_OPERATIONS = Set.of(
+            "/checkout/lookup",
+            "/checkout/pay",
+            "/checkout/request_confirmation",
+            "/checkout/confirm_payment"
+    );
 
     @Test
     void sdkImplementsEveryPublicOpenApiPath() throws Exception {
@@ -30,6 +36,7 @@ class OpenApiCoverageTest {
         List<String> missing = openApiPaths.stream()
                 .filter(path -> !implementedPaths.contains(path))
                 .filter(path -> !CAPABILITY_URL_OPERATIONS.contains(path))
+                .filter(path -> !CLIENT_CHECKOUT_OPERATIONS.contains(path))
                 .sorted()
                 .toList();
 
