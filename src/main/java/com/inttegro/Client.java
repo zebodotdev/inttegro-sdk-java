@@ -24,6 +24,8 @@ import com.inttegro.products.*;
 import com.inttegro.purchaseintents.*;
 import com.inttegro.refunds.*;
 import com.inttegro.specifications.*;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -66,7 +68,7 @@ import java.util.UUID;
      * Thread safety: immutable after construction; share freely across goroutines/threads.
      */
 public class Client {
-    public static final String VERSION = "4.0.0";
+    public static final String VERSION = "5.1.0";
 
     private static final String DEFAULT_BASE_URL = "https://api.inttegro.com";
     private static final String USER_AGENT = "inttegro-sdk-java/" + VERSION;
@@ -79,6 +81,7 @@ public class Client {
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
     private final SecureRandom random;
+    private final Telemetry telemetry;
 
     public final OrdersClient orders;
     public final RefundsClient refunds;
@@ -124,6 +127,21 @@ public class Client {
      * @param httpClient custom HttpClient (optional; pass null to use default)
      */
     public Client(String apiKey, String baseUrl, HttpClient httpClient) {
+        this(apiKey, baseUrl, httpClient, GlobalOpenTelemetry.get(), true);
+    }
+
+    /**
+     * Create a client using a specific OpenTelemetry instance.
+     *
+     * <p>The SDK creates no exporter and sends no telemetry by itself. Passing an application-owned
+     * OpenTelemetry instance makes Inttegro spans use that application's provider and propagators.</p>
+     */
+    public Client(String apiKey, String baseUrl, HttpClient httpClient, OpenTelemetry openTelemetry) {
+        this(apiKey, baseUrl, httpClient, openTelemetry, true);
+    }
+
+    /** Create a fully configured client, optionally disabling Inttegro instrumentation. */
+    public Client(String apiKey, String baseUrl, HttpClient httpClient, OpenTelemetry openTelemetry, boolean telemetryEnabled) {
         if (apiKey == null || apiKey.isEmpty()) {
             throw new IllegalArgumentException("apiKey is required");
         }
@@ -133,6 +151,8 @@ public class Client {
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.random = new SecureRandom();
+        OpenTelemetry configuredOpenTelemetry = openTelemetry != null ? openTelemetry : GlobalOpenTelemetry.get();
+        this.telemetry = new Telemetry(configuredOpenTelemetry, this.baseUrl, telemetryEnabled);
 
         this.orders = new OrdersClient(this);
         this.refunds = new RefundsClient(this);
@@ -279,56 +299,110 @@ public class Client {
      * Performs an HTTP request with optional JSON body.
      */
     <T> T request(String method, String path, Object body, Class<T> responseClass) throws IOException, InterruptedException, ApiException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
-                .timeout(Duration.ofSeconds(30))
-                .header("Authorization", "Bearer " + apiKey)
-                .header("User-Agent", USER_AGENT)
-                .header("Accept", "application/json");
+        try (Telemetry.Request telemetryRequest = telemetry.start(method, path, null)) {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + path))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Accept", "application/json");
 
-        Object requestBody = body != null ? bodyWithIdempotency(method, path, body, null) : null;
-        if (requestBody != null) {
-            builder.header("Content-Type", "application/json");
-            builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(requestBody), StandardCharsets.UTF_8));
-        } else {
-            builder.method(method, HttpRequest.BodyPublishers.noBody());
+            Object requestBody = body != null ? bodyWithIdempotency(method, path, body, null) : null;
+            if (requestBody != null) {
+                builder.header("Content-Type", "application/json");
+                try {
+                    builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(requestBody), StandardCharsets.UTF_8));
+                } catch (JsonProcessingException exception) {
+                    telemetryRequest.fail("encode_error");
+                    throw exception;
+                }
+            } else {
+                builder.method(method, HttpRequest.BodyPublishers.noBody());
+            }
+
+            telemetryRequest.inject(builder);
+            telemetryRequest.attempt();
+            HttpResponse<String> response;
+            try {
+                response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            } catch (InterruptedException exception) {
+                telemetryRequest.fail("canceled");
+                throw exception;
+            } catch (IOException exception) {
+                telemetryRequest.fail("transport_error");
+                throw exception;
+            }
+            telemetryRequest.response(response);
+
+            if (response.statusCode() >= 400) {
+                telemetryRequest.fail("http_" + response.statusCode());
+                throw parseApiException(response);
+            }
+
+            if (responseClass == null || response.body() == null || response.body().isEmpty()) {
+                return null;
+            }
+            try {
+                T decoded = mapper.readValue(response.body(), responseClass);
+                telemetryRequest.decoded();
+                return decoded;
+            } catch (JsonProcessingException exception) {
+                telemetryRequest.fail("decode_error");
+                throw exception;
+            }
         }
-
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-
-        if (response.statusCode() >= 400) {
-            throw parseApiException(response);
-        }
-
-        if (responseClass == null || response.body() == null || response.body().isEmpty()) {
-            return null;
-        }
-        return mapper.readValue(response.body(), responseClass);
     }
 
     <T> T requestWithOptions(String method, String path, Object body, RequestOptions options, Class<T> responseClass) throws IOException, InterruptedException, ApiException {
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + path))
-                .timeout(Duration.ofSeconds(30))
-                .header("Authorization", "Bearer " + apiKey)
-                .header("User-Agent", USER_AGENT)
-                .header("Accept", "application/json");
-        String explicitIdempotencyKey = options != null ? options.idempotencyKey() : null;
-        if (explicitIdempotencyKey != null && !explicitIdempotencyKey.isBlank()) {
-            builder.header("Idempotency-Key", explicitIdempotencyKey);
+        try (Telemetry.Request telemetryRequest = telemetry.start(method, path, null)) {
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + path))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Authorization", "Bearer " + apiKey)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Accept", "application/json");
+            String explicitIdempotencyKey = options != null ? options.idempotencyKey() : null;
+            if (explicitIdempotencyKey != null && !explicitIdempotencyKey.isBlank()) {
+                builder.header("Idempotency-Key", explicitIdempotencyKey);
+            }
+            Object requestBody = body != null ? bodyWithIdempotency(method, path, body, explicitIdempotencyKey) : null;
+            if (requestBody != null) {
+                builder.header("Content-Type", "application/json");
+                try {
+                    builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(requestBody), StandardCharsets.UTF_8));
+                } catch (JsonProcessingException exception) {
+                    telemetryRequest.fail("encode_error");
+                    throw exception;
+                }
+            } else {
+                builder.method(method, HttpRequest.BodyPublishers.noBody());
+            }
+            telemetryRequest.inject(builder);
+            telemetryRequest.attempt();
+            HttpResponse<String> response;
+            try {
+                response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            } catch (InterruptedException exception) {
+                telemetryRequest.fail("canceled");
+                throw exception;
+            } catch (IOException exception) {
+                telemetryRequest.fail("transport_error");
+                throw exception;
+            }
+            telemetryRequest.response(response);
+            if (response.statusCode() >= 400) {
+                telemetryRequest.fail("http_" + response.statusCode());
+                throw parseApiException(response);
+            }
+            try {
+                T decoded = mapper.readValue(response.body(), responseClass);
+                telemetryRequest.decoded();
+                return decoded;
+            } catch (JsonProcessingException exception) {
+                telemetryRequest.fail("decode_error");
+                throw exception;
+            }
         }
-        Object requestBody = body != null ? bodyWithIdempotency(method, path, body, explicitIdempotencyKey) : null;
-        if (requestBody != null) {
-            builder.header("Content-Type", "application/json");
-            builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(requestBody), StandardCharsets.UTF_8));
-        } else {
-            builder.method(method, HttpRequest.BodyPublishers.noBody());
-        }
-        HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-        if (response.statusCode() >= 400) {
-            throw parseApiException(response);
-        }
-        return mapper.readValue(response.body(), responseClass);
     }
 
     private <T> T requestResource(String path, Object body, String field, Class<T> resourceClass)
@@ -509,32 +583,61 @@ public class Client {
     }
 
     private JsonNode multipartRequest(String pathOrUrl, Map<String, Object> fields, Map<String, Path> files, RequestOptions options, boolean authenticated) throws IOException, InterruptedException, ApiException {
-        String boundary = "----InttegroBoundary" + UUID.randomUUID();
-        byte[] body = multipartBody(boundary, fields, files);
-        String url = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://") ? pathOrUrl : baseUrl + pathOrUrl;
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(30))
-                .header("Accept", "application/json")
-                .header("User-Agent", USER_AGENT)
-                .header("Content-Type", "multipart/form-data; boundary=" + boundary);
-        if (authenticated) {
-            builder.header("Authorization", "Bearer " + apiKey);
+        String operation = pathOrUrl.startsWith("http") ? "upload_requests.upload" : null;
+        try (Telemetry.Request telemetryRequest = telemetry.start("POST", pathOrUrl, operation)) {
+            String boundary = "----InttegroBoundary" + UUID.randomUUID();
+            byte[] body;
+            try {
+                body = multipartBody(boundary, fields, files);
+            } catch (IOException exception) {
+                telemetryRequest.fail("encode_error");
+                throw exception;
+            }
+            String url = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://") ? pathOrUrl : baseUrl + pathOrUrl;
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("Accept", "application/json")
+                    .header("User-Agent", USER_AGENT)
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary);
+            if (authenticated) {
+                builder.header("Authorization", "Bearer " + apiKey);
+            }
+            String explicitIdempotencyKey = options != null ? options.idempotencyKey() : null;
+            if (explicitIdempotencyKey != null && !explicitIdempotencyKey.isBlank()) {
+                builder.header("Idempotency-Key", explicitIdempotencyKey);
+            } else if (authenticated && isIdempotentMutationPath(pathOrUrl)) {
+                builder.header("Idempotency-Key", generateIdempotencyKey());
+            }
+            telemetryRequest.inject(builder);
+            telemetryRequest.attempt();
+            HttpResponse<String> response;
+            try {
+                response = httpClient.send(
+                        builder.POST(HttpRequest.BodyPublishers.ofByteArray(body)).build(),
+                        HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
+                );
+            } catch (InterruptedException exception) {
+                telemetryRequest.fail("canceled");
+                throw exception;
+            } catch (IOException exception) {
+                telemetryRequest.fail("transport_error");
+                throw exception;
+            }
+            telemetryRequest.response(response);
+            if (response.statusCode() >= 400) {
+                telemetryRequest.fail("http_" + response.statusCode());
+                throw parseApiException(response);
+            }
+            try {
+                JsonNode decoded = mapper.readTree(response.body());
+                telemetryRequest.decoded();
+                return decoded;
+            } catch (JsonProcessingException exception) {
+                telemetryRequest.fail("decode_error");
+                throw exception;
+            }
         }
-        String explicitIdempotencyKey = options != null ? options.idempotencyKey() : null;
-        if (explicitIdempotencyKey != null && !explicitIdempotencyKey.isBlank()) {
-            builder.header("Idempotency-Key", explicitIdempotencyKey);
-        } else if (authenticated && isIdempotentMutationPath(pathOrUrl)) {
-            builder.header("Idempotency-Key", generateIdempotencyKey());
-        }
-        HttpResponse<String> response = httpClient.send(
-                builder.POST(HttpRequest.BodyPublishers.ofByteArray(body)).build(),
-                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
-        );
-        if (response.statusCode() >= 400) {
-            throw parseApiException(response);
-        }
-        return mapper.readTree(response.body());
     }
 
     private <T> T multipartResource(
@@ -574,25 +677,47 @@ public class Client {
     }
 
     private FileDownload binaryRequest(String method, String pathOrUrl, Object body, boolean authenticated) throws IOException, InterruptedException, ApiException {
-        String url = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://") ? pathOrUrl : baseUrl + pathOrUrl;
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(30))
-                .header("User-Agent", USER_AGENT);
-        if (authenticated) {
-            builder.header("Authorization", "Bearer " + apiKey);
+        String operation = pathOrUrl.startsWith("http") ? "file_links.download" : null;
+        try (Telemetry.Request telemetryRequest = telemetry.start(method, pathOrUrl, operation)) {
+            String url = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://") ? pathOrUrl : baseUrl + pathOrUrl;
+            HttpRequest.Builder builder = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(30))
+                    .header("User-Agent", USER_AGENT);
+            if (authenticated) {
+                builder.header("Authorization", "Bearer " + apiKey);
+            }
+            if (body != null) {
+                builder.header("Content-Type", "application/json");
+                try {
+                    builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(body), StandardCharsets.UTF_8));
+                } catch (JsonProcessingException exception) {
+                    telemetryRequest.fail("encode_error");
+                    throw exception;
+                }
+            } else {
+                builder.method(method, HttpRequest.BodyPublishers.noBody());
+            }
+            telemetryRequest.inject(builder);
+            telemetryRequest.attempt();
+            HttpResponse<byte[]> response;
+            try {
+                response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+            } catch (InterruptedException exception) {
+                telemetryRequest.fail("canceled");
+                throw exception;
+            } catch (IOException exception) {
+                telemetryRequest.fail("transport_error");
+                throw exception;
+            }
+            telemetryRequest.response(response);
+            if (response.statusCode() >= 400) {
+                telemetryRequest.fail("http_" + response.statusCode());
+                throw new ApiException(response.statusCode(), null, null, null, new String(response.body(), StandardCharsets.UTF_8), null, null, null);
+            }
+            telemetryRequest.decoded();
+            return new FileDownload(response.body());
         }
-        if (body != null) {
-            builder.header("Content-Type", "application/json");
-            builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(body), StandardCharsets.UTF_8));
-        } else {
-            builder.method(method, HttpRequest.BodyPublishers.noBody());
-        }
-        HttpResponse<byte[]> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
-        if (response.statusCode() >= 400) {
-            throw new ApiException(response.statusCode(), null, null, null, new String(response.body(), StandardCharsets.UTF_8), null, null, null);
-        }
-        return new FileDownload(response.body());
     }
 
     // ------------ Resource clients -------------

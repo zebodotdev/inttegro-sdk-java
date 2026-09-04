@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.inttegro</groupId>
     <artifactId>inttegro-sdk-java</artifactId>
-    <version>5.0.0</version>
+    <version>5.1.0</version>
     <name>Inttegro Java SDK</name>
     <description>Official Java SDK for the Inttegro API</description>
     <url>https://github.com/zebodotdev/inttegro-sdk-java</url>
@@ -38,6 +38,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jackson.version>2.22.2</jackson.version>
         <junit.version>5.10.2</junit.version>
+        <opentelemetry.version>1.65.0</opentelemetry.version>
     </properties>
 
     <dependencies>
@@ -45,6 +46,17 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${opentelemetry.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+            <version>${opentelemetry.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

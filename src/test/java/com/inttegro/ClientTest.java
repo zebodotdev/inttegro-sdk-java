@@ -17,11 +17,24 @@ import com.inttegro.paymentmethods.MobileMoneyNetwork;
 import com.inttegro.prices.PriceParams;
 import com.inttegro.products.*;
 import com.inttegro.refunds.*;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.common.CompletableResultCode;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -75,6 +88,103 @@ class ClientTest {
         assertEquals(400, ex.getStatusCode());
         assertEquals("invalid_payment_method", ex.getCode());
         assertTrue(ex.getMessage().contains("missing"));
+    }
+
+    @Test
+    void telemetryTracesLogicalOperationPropagatesAndRedactsRequestData() throws Exception {
+        AtomicReference<String> traceparent = new AtomicReference<>();
+        server.createContext("/orders/lookup", exchange -> {
+            traceparent.set(exchange.getRequestHeaders().getFirst("traceparent"));
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.getResponseHeaders().set("x-request-id", "req_telemetry");
+            byte[] response = "{\"order\":{\"id\":\"or_private_123\"}}".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream output = exchange.getResponseBody()) {
+                output.write(response);
+            }
+        });
+        server.start();
+
+        RecordingSpanExporter exporter = new RecordingSpanExporter();
+        try (SdkTracerProvider provider = SdkTracerProvider.builder()
+                .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                .build()) {
+            OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder()
+                    .setTracerProvider(provider)
+                    .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+                    .build();
+            Client client = new Client("sk_test_do_not_trace", baseUrl, null, openTelemetry);
+            client.request(
+                    "POST",
+                    "/orders/lookup",
+                    Map.of("order_id", "or_private_123"),
+                    Map.class
+            );
+        }
+
+        assertNotNull(traceparent.get());
+        assertFalse(traceparent.get().isBlank());
+        assertEquals(1, exporter.spans.size());
+        SpanData span = exporter.spans.get(0);
+        assertEquals("inttegro.orders.lookup", span.getName());
+        assertEquals("orders.lookup", span.getAttributes().get(AttributeKey.stringKey("inttegro.operation.name")));
+        assertEquals(200L, span.getAttributes().get(AttributeKey.longKey("http.response.status_code")));
+        assertEquals("req_telemetry", span.getAttributes().get(AttributeKey.stringKey("inttegro.request.id")));
+        assertTrue(span.getEvents().stream().anyMatch(event -> event.getName().equals("inttegro.request.prepared")));
+        assertTrue(span.getEvents().stream().anyMatch(event -> event.getName().equals("inttegro.http.attempt.started")));
+        assertTrue(span.getEvents().stream().anyMatch(event -> event.getName().equals("inttegro.response.received")));
+        assertTrue(span.getEvents().stream().anyMatch(event -> event.getName().equals("inttegro.response.decoded")));
+
+        String telemetryText = span.getAttributes().toString() + span.getEvents();
+        assertFalse(telemetryText.contains("sk_test_do_not_trace"));
+        assertFalse(telemetryText.contains("or_private_123"));
+    }
+
+    @Test
+    void telemetryDoesNotNameUnknownRoutesFromResourceIds() {
+        RecordingSpanExporter exporter = new RecordingSpanExporter();
+        try (SdkTracerProvider provider = SdkTracerProvider.builder()
+                .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                .build()) {
+            OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder().setTracerProvider(provider).build();
+            Telemetry telemetry = new Telemetry(openTelemetry, "https://api.inttegro.com", true);
+            try (Telemetry.Request ignored = telemetry.start("GET", "/orders/or_private_123", null)) {
+                // Closing the request completes the span.
+            }
+        }
+
+        SpanData span = exporter.spans.get(0);
+        assertEquals("inttegro.http.request", span.getName());
+        assertNull(span.getAttributes().get(AttributeKey.stringKey("url.template")));
+        assertFalse(span.getAttributes().toString().contains("or_private_123"));
+    }
+
+    @Test
+    void telemetryRecordsSafeHttpFailure() throws Exception {
+        server.createContext("/orders/lookup", new JsonHandler(401, "{\"message\":\"sk_live_private must never be traced\"}"));
+        server.start();
+
+        RecordingSpanExporter exporter = new RecordingSpanExporter();
+        try (SdkTracerProvider provider = SdkTracerProvider.builder()
+                .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                .build()) {
+            OpenTelemetrySdk openTelemetry = OpenTelemetrySdk.builder().setTracerProvider(provider).build();
+            Client client = new Client("sk_live_private", baseUrl, null, openTelemetry);
+            assertThrows(ApiException.class, () -> client.request(
+                    "POST",
+                    "/orders/lookup",
+                    Map.of("order_id", "or_private"),
+                    Map.class
+            ));
+        }
+
+        SpanData span = exporter.spans.get(0);
+        assertEquals(StatusCode.ERROR, span.getStatus().getStatusCode());
+        assertEquals("http_401", span.getAttributes().get(AttributeKey.stringKey("error.type")));
+        assertTrue(span.getEvents().stream().anyMatch(event -> event.getName().equals("inttegro.request.failed")));
+        String telemetryText = span.getAttributes().toString() + span.getEvents();
+        assertFalse(telemetryText.contains("sk_live_private"));
+        assertFalse(telemetryText.contains("or_private"));
     }
 
     @Test
@@ -389,6 +499,26 @@ class ClientTest {
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(bytes);
             }
+        }
+    }
+
+    private static final class RecordingSpanExporter implements SpanExporter {
+        private final List<SpanData> spans = new ArrayList<>();
+
+        @Override
+        public CompletableResultCode export(Collection<SpanData> spans) {
+            this.spans.addAll(spans);
+            return CompletableResultCode.ofSuccess();
+        }
+
+        @Override
+        public CompletableResultCode flush() {
+            return CompletableResultCode.ofSuccess();
+        }
+
+        @Override
+        public CompletableResultCode shutdown() {
+            return CompletableResultCode.ofSuccess();
         }
     }
 }

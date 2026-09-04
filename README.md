@@ -16,7 +16,7 @@ Requires Java 17 or newer.
 <dependency>
   <groupId>com.inttegro</groupId>
   <artifactId>inttegro-sdk-java</artifactId>
-  <version>5.0.0</version>
+  <version>5.1.0</version>
 </dependency>
 ```
 
@@ -108,6 +108,21 @@ System.out.println(refund.id + " " + refund.status);
 
 Use `refunds().cancel`, `refunds().lookup`, and `refunds().page` to manage the refund lifecycle. `orders().refund` remains a deprecated compatibility alias and returns the created `Refund` directly.
 
+## Observe SDK operations
+
+The SDK emits vendor-neutral OpenTelemetry spans through your application's provider. It never configures an exporter or sends telemetry by itself. Java's global provider is used automatically, or inject the `OpenTelemetry` instance owned by your application:
+
+```java
+Client inttegro = new Client(
+    System.getenv("INTTEGRO_API_KEY"),
+    "https://api.inttegro.com",
+    httpClient,
+    openTelemetry
+);
+```
+
+Spans are named after logical operations such as `inttegro.orders.create`. HTTP attempts, response receipt, and decoding are span events. API keys, bodies, resource IDs, dynamic URLs, and exception messages are never recorded. See [SDK observability](https://studio.inttegro.com/sdk-observability) for the complete contract. The five-argument constructor can disable SDK telemetry when needed.
+
 ## Work with the API
 
 The SDK covers orders and checkout, customers, products and prices, purchase intents, payment methods, balances, payouts and refunds, notifications, files, application settings, keys, and country specifications. Resource clients use camel-case fields such as `purchaseIntents` and `paymentMethods`.
@@ -130,7 +145,7 @@ The GitHub release for each version is the canonical record. It contains the exa
 
 ```bash
 sha256sum --check SHA256SUMS
-gh attestation verify inttegro-sdk-java-5.0.0.jar \
+gh attestation verify inttegro-sdk-java-5.1.0.jar \
   --repo zebodotdev/inttegro-sdk-java
 ```
 
