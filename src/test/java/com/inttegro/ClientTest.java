@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import com.inttegro.apps.*;
 import com.inttegro.balances.*;
+import com.inttegro.diagnostics.ErrorReport;
+import com.inttegro.diagnostics.ErrorReportingPolicy;
 import com.inttegro.money.AmountParams;
 import com.inttegro.money.Currency;
 import com.inttegro.orders.*;
@@ -18,6 +20,7 @@ import com.inttegro.prices.PriceParams;
 import com.inttegro.products.*;
 import com.inttegro.refunds.*;
 import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
@@ -185,6 +188,85 @@ class ClientTest {
         String telemetryText = span.getAttributes().toString() + span.getEvents();
         assertFalse(telemetryText.contains("sk_live_private"));
         assertFalse(telemetryText.contains("or_private"));
+    }
+
+    @Test
+    void reportsOnePrivacySafeFinalFailureWhenConfigured() throws Exception {
+        server.createContext("/orders/lookup", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.getResponseHeaders().set("x-request-id", "req_456");
+            byte[] response = ("{\"error\":{\"type\":\"transient_error\","
+                    + "\"code\":\"provider_failed\",\"fix_code\":\"repeat_same_request\","
+                    + "\"message\":\"private provider detail\"}}")
+                    .getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(503, response.length);
+            try (OutputStream output = exchange.getResponseBody()) {
+                output.write(response);
+            }
+        });
+        server.start();
+
+        List<ErrorReport> reports = new ArrayList<>();
+        Client client = new Client(
+                "sk_live_must_not_appear",
+                baseUrl,
+                null,
+                OpenTelemetry.noop(),
+                false,
+                report -> {
+                    reports.add(report);
+                    throw new IllegalStateException("collector unavailable");
+                },
+                ErrorReportingPolicy.UNEXPECTED
+        );
+        ApiException exception = assertThrows(ApiException.class, () -> client.request(
+                "POST",
+                "/orders/lookup",
+                Map.of("order_id", "or_private"),
+                Map.class
+        ));
+
+        assertEquals(1, reports.size());
+        ErrorReport report = reports.get(0);
+        assertEquals("http_503", report.category());
+        assertEquals("orders.lookup", report.operation());
+        assertEquals("POST", report.http().method());
+        assertEquals("/orders/lookup", report.http().route());
+        assertEquals(503, report.http().statusCode());
+        assertEquals("req_456", report.http().requestId());
+        assertEquals("transient_error", report.apiError().type());
+        assertEquals("inttegro:java:orders.lookup:http_503:503", report.fingerprint());
+        assertSame(report, exception.getReport());
+        String encoded = new ObjectMapper().writeValueAsString(report);
+        assertFalse(encoded.contains("private provider detail"));
+        assertFalse(encoded.contains("sk_live_must_not_appear"));
+        assertFalse(encoded.contains("or_private"));
+    }
+
+    @Test
+    void defaultErrorReportingSkipsExpectedApiErrors() throws Exception {
+        server.createContext("/orders/lookup", new JsonHandler(400, "{\"error\":{\"type\":\"invalid_request_parameter\"}}"));
+        server.start();
+
+        List<ErrorReport> reports = new ArrayList<>();
+        Client client = new Client(
+                "test",
+                baseUrl,
+                null,
+                OpenTelemetry.noop(),
+                false,
+                reports::add,
+                ErrorReportingPolicy.UNEXPECTED
+        );
+        ApiException exception = assertThrows(ApiException.class, () -> client.request(
+                "POST",
+                "/orders/lookup",
+                null,
+                Map.class
+        ));
+
+        assertTrue(reports.isEmpty());
+        assertNull(exception.getReport());
     }
 
     @Test
