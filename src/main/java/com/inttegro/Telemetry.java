@@ -1,5 +1,9 @@
 package com.inttegro;
 
+import com.inttegro.diagnostics.ErrorReport;
+import com.inttegro.diagnostics.ErrorReporter;
+import com.inttegro.diagnostics.ErrorReportingPolicy;
+
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
@@ -15,6 +19,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 
 final class Telemetry {
     private static final Set<String> SAFE_RESOURCES = Set.of(
@@ -44,19 +49,36 @@ final class Telemetry {
     private final Tracer tracer;
     private final String baseUrl;
     private final boolean enabled;
+    private final ErrorReporter errorReporter;
+    private final ErrorReportingPolicy errorReportingPolicy;
 
     Telemetry(OpenTelemetry openTelemetry, String baseUrl, boolean enabled) {
+        this(openTelemetry, baseUrl, enabled, null, ErrorReportingPolicy.UNEXPECTED);
+    }
+
+    Telemetry(
+            OpenTelemetry openTelemetry,
+            String baseUrl,
+            boolean enabled,
+            ErrorReporter errorReporter,
+            ErrorReportingPolicy errorReportingPolicy
+    ) {
         this.openTelemetry = openTelemetry;
         this.tracer = openTelemetry.getTracer("inttegro", Client.VERSION);
         this.baseUrl = baseUrl;
         this.enabled = enabled;
+        this.errorReporter = errorReporter;
+        this.errorReportingPolicy = errorReportingPolicy != null ? errorReportingPolicy : ErrorReportingPolicy.UNEXPECTED;
     }
 
     Request start(String method, String pathOrUrl, String explicitOperation) {
-        if (!enabled) {
+        if (!enabled && errorReporter == null) {
             return Request.disabled();
         }
         RequestDetails details = RequestDetails.from(baseUrl, pathOrUrl, explicitOperation);
+        if (!enabled) {
+            return new Request(null, null, null, errorReporter, errorReportingPolicy, details, method);
+        }
         Span span = tracer.spanBuilder("inttegro." + details.operation())
                 .setSpanKind(SpanKind.CLIENT)
                 .setAttribute("inttegro.operation.name", details.operation())
@@ -69,22 +91,43 @@ final class Telemetry {
             span.setAttribute("url.template", details.route());
         }
         span.addEvent("inttegro.request.prepared");
-        return new Request(openTelemetry, span, span.makeCurrent());
+        if (errorReporter == null) {
+            return new Request(openTelemetry, span, span.makeCurrent(), null, errorReportingPolicy, null, null);
+        }
+        return new Request(openTelemetry, span, span.makeCurrent(), errorReporter, errorReportingPolicy, details, method);
     }
 
     static final class Request implements AutoCloseable {
         private final OpenTelemetry openTelemetry;
         private final Span span;
         private final Scope scope;
+        private final ErrorReporter errorReporter;
+        private final ErrorReportingPolicy errorReportingPolicy;
+        private final RequestDetails details;
+        private final String method;
+        private final long startedAtNanos;
 
-        private Request(OpenTelemetry openTelemetry, Span span, Scope scope) {
+        private Request(
+                OpenTelemetry openTelemetry,
+                Span span,
+                Scope scope,
+                ErrorReporter errorReporter,
+                ErrorReportingPolicy errorReportingPolicy,
+                RequestDetails details,
+                String method
+        ) {
             this.openTelemetry = openTelemetry;
             this.span = span;
             this.scope = scope;
+            this.errorReporter = errorReporter;
+            this.errorReportingPolicy = errorReportingPolicy;
+            this.details = details;
+            this.method = method;
+            this.startedAtNanos = errorReporter == null ? 0L : System.nanoTime();
         }
 
         private static Request disabled() {
-            return new Request(null, null, null);
+            return new Request(null, null, null, null, ErrorReportingPolicy.UNEXPECTED, null, null);
         }
 
         void inject(HttpRequest.Builder builder) {
@@ -133,6 +176,77 @@ final class Telemetry {
                     "inttegro.request.failed",
                     Attributes.of(AttributeKey.stringKey("error.type"), errorType)
             );
+        }
+
+        void fail(Throwable error, String errorType) {
+            fail(errorType);
+            if (errorReporter == null || "canceled".equals(errorType)) {
+                return;
+            }
+            try {
+                ApiException apiException = error instanceof ApiException exception ? exception : null;
+                if (errorReportingPolicy == ErrorReportingPolicy.UNEXPECTED
+                        && apiException != null
+                        && apiException.getStatusCode() < 500
+                        && !"unknown_error".equals(apiException.getType())) {
+                    return;
+                }
+
+                ErrorReport.ApiErrorContext apiContext = null;
+                Integer statusCode = null;
+                String requestId = null;
+                if (apiException != null) {
+                    statusCode = apiException.getStatusCode();
+                    requestId = apiException.getRequestId();
+                    if (apiException.getType() != null || apiException.getCode() != null || apiException.getFixCode() != null) {
+                        apiContext = new ErrorReport.ApiErrorContext(
+                                apiException.getType(),
+                                apiException.getCode(),
+                                apiException.getFixCode()
+                        );
+                    }
+                }
+                ErrorReport.TraceContext traceContext = null;
+                if (span != null && span.getSpanContext().isValid()) {
+                    traceContext = new ErrorReport.TraceContext(
+                            span.getSpanContext().getTraceId(),
+                            span.getSpanContext().getSpanId()
+                    );
+                }
+                long durationMs = Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
+                ErrorReport report = new ErrorReport(
+                        1,
+                        UUID.randomUUID().toString(),
+                        java.time.Instant.now().toString(),
+                        "error",
+                        errorType,
+                        details.operation(),
+                        new ErrorReport.SdkContext("java", Client.VERSION),
+                        new ErrorReport.HttpContext(
+                                method.toUpperCase(Locale.ROOT),
+                                details.route(),
+                                details.serverAddress(),
+                                statusCode,
+                                requestId,
+                                durationMs
+                        ),
+                        apiContext,
+                        traceContext,
+                        error.getClass().getSimpleName(),
+                        String.join(":",
+                                "inttegro",
+                                "java",
+                                details.operation(),
+                                errorType,
+                                statusCode != null ? statusCode.toString() : "none")
+                );
+                if (apiException != null) {
+                    apiException.attachReport(report);
+                }
+                errorReporter.report(report);
+            } catch (Throwable ignored) {
+                // Report preparation and delivery must never replace the original failure.
+            }
         }
 
         @Override

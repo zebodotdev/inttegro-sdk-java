@@ -24,6 +24,8 @@ import com.inttegro.products.*;
 import com.inttegro.purchaseintents.*;
 import com.inttegro.refunds.*;
 import com.inttegro.specifications.*;
+import com.inttegro.diagnostics.ErrorReporter;
+import com.inttegro.diagnostics.ErrorReportingPolicy;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 
@@ -68,7 +70,7 @@ import java.util.UUID;
      * Thread safety: immutable after construction; share freely across goroutines/threads.
      */
 public class Client {
-    public static final String VERSION = "5.1.0";
+    public static final String VERSION = "5.2.0";
 
     private static final String DEFAULT_BASE_URL = "https://api.inttegro.com";
     private static final String USER_AGENT = "inttegro-sdk-java/" + VERSION;
@@ -116,6 +118,24 @@ public class Client {
         this(apiKey, DEFAULT_BASE_URL, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
     }
 
+    /** Create a client that sends privacy-safe final-failure reports to an application-owned reporter. */
+    public Client(String apiKey, ErrorReporter errorReporter) {
+        this(apiKey, errorReporter, ErrorReportingPolicy.UNEXPECTED);
+    }
+
+    /** Create a client with application-owned error reporting and an explicit reporting policy. */
+    public Client(String apiKey, ErrorReporter errorReporter, ErrorReportingPolicy errorReportingPolicy) {
+        this(
+                apiKey,
+                DEFAULT_BASE_URL,
+                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build(),
+                GlobalOpenTelemetry.get(),
+                true,
+                errorReporter,
+                errorReportingPolicy
+        );
+    }
+
     /**
      * Create a client with a custom base URL and/or HttpClient.
      *
@@ -142,6 +162,19 @@ public class Client {
 
     /** Create a fully configured client, optionally disabling Inttegro instrumentation. */
     public Client(String apiKey, String baseUrl, HttpClient httpClient, OpenTelemetry openTelemetry, boolean telemetryEnabled) {
+        this(apiKey, baseUrl, httpClient, openTelemetry, telemetryEnabled, null, ErrorReportingPolicy.UNEXPECTED);
+    }
+
+    /** Create a fully configured client with optional application-owned error reporting. */
+    public Client(
+            String apiKey,
+            String baseUrl,
+            HttpClient httpClient,
+            OpenTelemetry openTelemetry,
+            boolean telemetryEnabled,
+            ErrorReporter errorReporter,
+            ErrorReportingPolicy errorReportingPolicy
+    ) {
         if (apiKey == null || apiKey.isEmpty()) {
             throw new IllegalArgumentException("apiKey is required");
         }
@@ -152,7 +185,13 @@ public class Client {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.random = new SecureRandom();
         OpenTelemetry configuredOpenTelemetry = openTelemetry != null ? openTelemetry : GlobalOpenTelemetry.get();
-        this.telemetry = new Telemetry(configuredOpenTelemetry, this.baseUrl, telemetryEnabled);
+        this.telemetry = new Telemetry(
+                configuredOpenTelemetry,
+                this.baseUrl,
+                telemetryEnabled,
+                errorReporter,
+                errorReportingPolicy
+        );
 
         this.orders = new OrdersClient(this);
         this.refunds = new RefundsClient(this);
@@ -313,7 +352,7 @@ public class Client {
                 try {
                     builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(requestBody), StandardCharsets.UTF_8));
                 } catch (JsonProcessingException exception) {
-                    telemetryRequest.fail("encode_error");
+                    telemetryRequest.fail(exception, "encode_error");
                     throw exception;
                 }
             } else {
@@ -326,17 +365,18 @@ public class Client {
             try {
                 response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             } catch (InterruptedException exception) {
-                telemetryRequest.fail("canceled");
+                telemetryRequest.fail(exception, "canceled");
                 throw exception;
             } catch (IOException exception) {
-                telemetryRequest.fail("transport_error");
+                telemetryRequest.fail(exception, "transport_error");
                 throw exception;
             }
             telemetryRequest.response(response);
 
             if (response.statusCode() >= 400) {
-                telemetryRequest.fail("http_" + response.statusCode());
-                throw parseApiException(response);
+                ApiException exception = parseApiException(response);
+                telemetryRequest.fail(exception, "http_" + response.statusCode());
+                throw exception;
             }
 
             if (responseClass == null || response.body() == null || response.body().isEmpty()) {
@@ -347,7 +387,7 @@ public class Client {
                 telemetryRequest.decoded();
                 return decoded;
             } catch (JsonProcessingException exception) {
-                telemetryRequest.fail("decode_error");
+                telemetryRequest.fail(exception, "decode_error");
                 throw exception;
             }
         }
@@ -371,7 +411,7 @@ public class Client {
                 try {
                     builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(requestBody), StandardCharsets.UTF_8));
                 } catch (JsonProcessingException exception) {
-                    telemetryRequest.fail("encode_error");
+                    telemetryRequest.fail(exception, "encode_error");
                     throw exception;
                 }
             } else {
@@ -383,23 +423,24 @@ public class Client {
             try {
                 response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             } catch (InterruptedException exception) {
-                telemetryRequest.fail("canceled");
+                telemetryRequest.fail(exception, "canceled");
                 throw exception;
             } catch (IOException exception) {
-                telemetryRequest.fail("transport_error");
+                telemetryRequest.fail(exception, "transport_error");
                 throw exception;
             }
             telemetryRequest.response(response);
             if (response.statusCode() >= 400) {
-                telemetryRequest.fail("http_" + response.statusCode());
-                throw parseApiException(response);
+                ApiException exception = parseApiException(response);
+                telemetryRequest.fail(exception, "http_" + response.statusCode());
+                throw exception;
             }
             try {
                 T decoded = mapper.readValue(response.body(), responseClass);
                 telemetryRequest.decoded();
                 return decoded;
             } catch (JsonProcessingException exception) {
-                telemetryRequest.fail("decode_error");
+                telemetryRequest.fail(exception, "decode_error");
                 throw exception;
             }
         }
@@ -571,11 +612,31 @@ public class Client {
             String fixCode = stringVal(payload.get("fix_code"));
             String cause = stringVal(payload.get("cause"));
             if (code != null || type != null || url != null || message != null || detail != null) {
-                return new ApiException(response.statusCode(), code, type, url, message, detail, fixCode, cause);
+                return new ApiException(
+                        response.statusCode(),
+                        code,
+                        type,
+                        url,
+                        message,
+                        detail,
+                        fixCode,
+                        cause,
+                        response.headers().firstValue("x-request-id").orElse(null)
+                );
             }
         } catch (Exception ignored) {
         }
-        return new ApiException(response.statusCode(), null, null, null, response.body(), null, null, null);
+        return new ApiException(
+                response.statusCode(),
+                null,
+                null,
+                null,
+                response.body(),
+                null,
+                null,
+                null,
+                response.headers().firstValue("x-request-id").orElse(null)
+        );
     }
 
     private String stringVal(Object o) {
@@ -590,7 +651,7 @@ public class Client {
             try {
                 body = multipartBody(boundary, fields, files);
             } catch (IOException exception) {
-                telemetryRequest.fail("encode_error");
+                telemetryRequest.fail(exception, "encode_error");
                 throw exception;
             }
             String url = pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://") ? pathOrUrl : baseUrl + pathOrUrl;
@@ -618,23 +679,24 @@ public class Client {
                         HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)
                 );
             } catch (InterruptedException exception) {
-                telemetryRequest.fail("canceled");
+                telemetryRequest.fail(exception, "canceled");
                 throw exception;
             } catch (IOException exception) {
-                telemetryRequest.fail("transport_error");
+                telemetryRequest.fail(exception, "transport_error");
                 throw exception;
             }
             telemetryRequest.response(response);
             if (response.statusCode() >= 400) {
-                telemetryRequest.fail("http_" + response.statusCode());
-                throw parseApiException(response);
+                ApiException exception = parseApiException(response);
+                telemetryRequest.fail(exception, "http_" + response.statusCode());
+                throw exception;
             }
             try {
                 JsonNode decoded = mapper.readTree(response.body());
                 telemetryRequest.decoded();
                 return decoded;
             } catch (JsonProcessingException exception) {
-                telemetryRequest.fail("decode_error");
+                telemetryRequest.fail(exception, "decode_error");
                 throw exception;
             }
         }
@@ -692,7 +754,7 @@ public class Client {
                 try {
                     builder.method(method, HttpRequest.BodyPublishers.ofString(serialize(body), StandardCharsets.UTF_8));
                 } catch (JsonProcessingException exception) {
-                    telemetryRequest.fail("encode_error");
+                    telemetryRequest.fail(exception, "encode_error");
                     throw exception;
                 }
             } else {
@@ -704,16 +766,27 @@ public class Client {
             try {
                 response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
             } catch (InterruptedException exception) {
-                telemetryRequest.fail("canceled");
+                telemetryRequest.fail(exception, "canceled");
                 throw exception;
             } catch (IOException exception) {
-                telemetryRequest.fail("transport_error");
+                telemetryRequest.fail(exception, "transport_error");
                 throw exception;
             }
             telemetryRequest.response(response);
             if (response.statusCode() >= 400) {
-                telemetryRequest.fail("http_" + response.statusCode());
-                throw new ApiException(response.statusCode(), null, null, null, new String(response.body(), StandardCharsets.UTF_8), null, null, null);
+                ApiException exception = new ApiException(
+                        response.statusCode(),
+                        null,
+                        null,
+                        null,
+                        new String(response.body(), StandardCharsets.UTF_8),
+                        null,
+                        null,
+                        null,
+                        response.headers().firstValue("x-request-id").orElse(null)
+                );
+                telemetryRequest.fail(exception, "http_" + response.statusCode());
+                throw exception;
             }
             telemetryRequest.decoded();
             return new FileDownload(response.body());
