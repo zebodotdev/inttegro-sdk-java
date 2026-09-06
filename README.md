@@ -4,6 +4,8 @@
 
 The official Java client for building server-side Inttegro integrations.
 
+[API documentation](https://java.inttegro.dev/) · [Integration guides](https://studio.inttegro.com/sdks/java)
+
 > **Fastest, most modern path:** connect an agent to [Inttegro MCP](https://studio.inttegro.com/inttegro-mcp) at `https://mcp.inttegro.com`, then ask it to run `design_integration`. It will produce an implementation and test plan for your application. Use this SDK when you are ready to connect that plan to your Java service.
 
 All official Inttegro SDKs expose the same API capabilities. This package adds Java-specific builders, domain types, and HTTP integration.
@@ -16,7 +18,7 @@ Requires Java 17 or newer.
 <dependency>
   <groupId>com.inttegro</groupId>
   <artifactId>inttegro-sdk-java</artifactId>
-  <version>5.1.0</version>
+  <version>5.2.0</version>
 </dependency>
 ```
 
