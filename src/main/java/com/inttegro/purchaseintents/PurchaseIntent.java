@@ -5,8 +5,6 @@ import java.util.List;
 
 public class PurchaseIntent {
     public String id;
-    @JsonProperty("application_id")
-    public String applicationId;
     @JsonProperty("product_id")
     public String productId;
     @JsonProperty("price_id")
