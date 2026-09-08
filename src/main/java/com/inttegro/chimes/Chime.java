@@ -1,5 +1,7 @@
 package com.inttegro.chimes;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +13,7 @@ public class Chime {
     public ChimeRecipient recipient;
     @JsonProperty("sender_id") public String senderId;
     public String purpose;
-    @JsonProperty("custom_data") public Map<String, String> customData;
-    public Object delivery;
-    public Object transmission;
+    @JsonProperty("custom_data") public CustomData customData;
+    public ChimeEmailMessage email;
+    public ChimeTransmission transmission;
 }

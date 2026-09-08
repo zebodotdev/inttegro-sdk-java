@@ -17,7 +17,7 @@ public class Payout {
     @JsonProperty("scheduled_at") public String scheduledAt;
     @JsonProperty("canceled_at") public String canceledAt;
     @JsonProperty("latest_attempt_id") public String latestAttemptId;
-    @JsonProperty("latest_error") public Object latestError;
+    @JsonProperty("latest_error") public PayoutError latestError;
     @JsonProperty("initiated_at") public String initiatedAt;
     @JsonProperty("executed_at") public String executedAt;
     @JsonProperty("expected_at") public String expectedAt;

@@ -1,10 +1,11 @@
 package com.inttegro.financialaccounts;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.bankaccounts.BankAccountConfig;
 import com.inttegro.bankaccounts.BankAccountOwner;
 import com.inttegro.wallets.WalletConfig;
-import java.util.Map;
 
 public class FinancialAccount {
     public String id;
@@ -17,11 +18,11 @@ public class FinancialAccount {
     @JsonProperty("push_configuration") public PullPushConfig pushConfiguration;
     public WalletConfig wallet;
     @JsonProperty("bank_account") public BankAccountConfig bankAccount;
-    @JsonProperty("dosh_account") public Map<String, Object> doshAccount;
-    public Object verification;
+    @JsonProperty("dosh_account") public DoshAccount doshAccount;
+    public FinancialAccountVerification verification;
     @JsonProperty("archived_at") public String archivedAt;
     @JsonProperty("disconnected_at") public String disconnectedAt;
     @JsonProperty("created_at") public String createdAt;
-    @JsonProperty("custom_data") public Map<String, String> customData;
+    @JsonProperty("custom_data") public CustomData customData;
     public BankAccountOwner owner;
 }

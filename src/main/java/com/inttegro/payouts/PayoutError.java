@@ -1,0 +1,10 @@
+package com.inttegro.payouts;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public final class PayoutError {
+    public String cause;
+    public String message;
+    @JsonProperty("occurred_at") public String occurredAt;
+    public String type;
+}

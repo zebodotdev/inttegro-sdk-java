@@ -1,5 +1,7 @@
 package com.inttegro.files;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
@@ -10,5 +12,5 @@ public final class FileLink {
     @JsonProperty("expires_at") public String expiresAt;
     @JsonProperty("created_at") public String createdAt;
     @JsonProperty("revoked_at") public String revokedAt;
-    @JsonProperty("custom_data") public Map<String, String> customData;
+    @JsonProperty("custom_data") public CustomData customData;
 }

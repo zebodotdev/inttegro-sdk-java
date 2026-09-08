@@ -2,6 +2,7 @@ package com.inttegro.payments;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.inttegro.JsonData;
 import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
@@ -16,6 +17,6 @@ import java.util.function.Consumer;
 public class PaymentNextAction {
     public PaymentNextActionType type;
     @JsonProperty("confirm_payment") public ConfirmPaymentAction confirmPayment;
-    public Object execute;
+    public JsonData execute;
     public RedirectAction redirect;
 }

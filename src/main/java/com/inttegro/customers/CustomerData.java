@@ -1,7 +1,8 @@
 package com.inttegro.customers;
 
+import com.inttegro.CustomDataInput;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 
 public class CustomerData {
     public String name;
@@ -13,7 +14,7 @@ public class CustomerData {
     public String phoneNumber;
     public String reference;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomDataInput customData;
     @JsonProperty("created_at")
     public String createdAt;
 
@@ -27,7 +28,7 @@ public class CustomerData {
         public Builder email(String email) { data.emailAddress = email; return this; }
         public Builder phoneNumber(String phone) { data.phoneNumber = phone; return this; }
         public Builder reference(String ref) { data.reference = ref; return this; }
-        public Builder customData(Map<String, String> data) { this.data.customData = data; return this; }
+        public Builder customData(CustomDataInput data) { this.data.customData = data; return this; }
         public CustomerData build() { return data; }
     }
 }

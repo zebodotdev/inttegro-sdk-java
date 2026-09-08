@@ -1,5 +1,7 @@
 package com.inttegro.files;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.file.Path;
 import java.util.List;
@@ -15,7 +17,7 @@ public class FileLinkCreateParams {
     @JsonProperty("file_id")
     public String fileId;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomData customData;
 
     public static Builder builder() { return new Builder(); }
 
@@ -26,7 +28,7 @@ public class FileLinkCreateParams {
         public Builder delivery(FileLinkDelivery delivery) { params.delivery = delivery; return this; }
         public Builder expiresAt(String expiresAt) { params.expiresAt = expiresAt; return this; }
         public Builder fileId(String fileId) { params.fileId = fileId; return this; }
-        public Builder customData(Map<String, String> customData) { params.customData = customData; return this; }
+        public Builder customData(CustomData customData) { params.customData = customData; return this; }
         public FileLinkCreateParams build() { return params; }
     }
 }

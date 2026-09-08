@@ -1,5 +1,7 @@
 package com.inttegro.orders;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.customers.Address;
@@ -16,8 +18,8 @@ import java.util.function.Consumer;
 public class OrderUpdateParams {
     @JsonProperty("order_id") public String orderId;
     @JsonProperty("clear_payment_method") public Boolean clearPaymentMethod;
-    @JsonProperty("custom_data") public Map<String, String> customData;
-    @JsonProperty("invoice_settings") public Map<String, Object> invoiceSettings;
+    @JsonProperty("custom_data") public CustomData customData;
+    @JsonProperty("invoice_settings") public InvoiceSettings invoiceSettings;
     public Boolean finalize;
     @JsonProperty("line_items") public List<OrderLineItemParams> lineItems;
     public String number;
@@ -32,8 +34,8 @@ public class OrderUpdateParams {
         private final OrderUpdateParams params = new OrderUpdateParams();
         public Builder orderId(String orderId) { params.orderId = orderId; return this; }
         public Builder clearPaymentMethod(Boolean clearPaymentMethod) { params.clearPaymentMethod = clearPaymentMethod; return this; }
-        public Builder customData(Map<String, String> customData) { params.customData = customData; return this; }
-        public Builder invoiceSettings(Map<String, Object> invoiceSettings) { params.invoiceSettings = invoiceSettings; return this; }
+        public Builder customData(CustomData customData) { params.customData = customData; return this; }
+        public Builder invoiceSettings(InvoiceSettings invoiceSettings) { params.invoiceSettings = invoiceSettings; return this; }
         public Builder finalizeOrder(Boolean finalize) { params.finalize = finalize; return this; }
         public Builder lineItems(List<OrderLineItemParams> lineItems) { params.lineItems = lineItems; return this; }
         public Builder number(String number) { params.number = number; return this; }

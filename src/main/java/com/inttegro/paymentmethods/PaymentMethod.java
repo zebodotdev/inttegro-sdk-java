@@ -1,5 +1,7 @@
 package com.inttegro.paymentmethods;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
@@ -15,7 +17,7 @@ public class PaymentMethod {
     public CardSummary card;
     public VerificationMetadata verification;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomData customData;
     @JsonProperty("expires_on")
     public String expiresOn;
     @JsonProperty("created_at")

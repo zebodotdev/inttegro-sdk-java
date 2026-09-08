@@ -1,13 +1,14 @@
 package com.inttegro.customers;
 
+import com.inttegro.CustomDataInput;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 
 public class UpdateCustomerParams {
     @JsonProperty("billing_address")
     public Address billingAddress;
     @JsonProperty("custom_data")
-    public Map<String, Object> customData;
+    public CustomDataInput customData;
     @JsonProperty("customer_id")
     public String customerId;
     @JsonProperty("email_address")
@@ -26,7 +27,7 @@ public class UpdateCustomerParams {
     public static class Builder {
         private final UpdateCustomerParams params = new UpdateCustomerParams();
         public Builder billingAddress(Address billingAddress) { params.billingAddress = billingAddress; return this; }
-        public Builder customData(Map<String, Object> customData) { params.customData = customData; return this; }
+        public Builder customData(CustomDataInput customData) { params.customData = customData; return this; }
         public Builder customerId(String customerId) { params.customerId = customerId; return this; }
         public Builder emailAddress(String emailAddress) { params.emailAddress = emailAddress; return this; }
         public Builder name(String name) { params.name = name; return this; }

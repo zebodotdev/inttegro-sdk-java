@@ -12,6 +12,7 @@ import com.inttegro.apps.*;
 import com.inttegro.balances.*;
 import com.inttegro.diagnostics.ErrorReport;
 import com.inttegro.diagnostics.ErrorReportingPolicy;
+import com.inttegro.messages.*;
 import com.inttegro.money.AmountParams;
 import com.inttegro.money.Currency;
 import com.inttegro.orders.*;
@@ -494,12 +495,14 @@ class ClientTest {
         server.start();
 
         Client client = new Client("sk_test_123", baseUrl, null);
-        client.messageTemplates().create(Map.of(
-                "name", "welcome_sms",
-                "channel", "sms",
-                "purpose", "marketing",
-                "sms", Map.of("message_template", "Welcome {{name}}")
-        ));
+        MessageTemplateSmsContent sms = new MessageTemplateSmsContent();
+        sms.messageTemplate = "Welcome {{name}}";
+        CreateMessageTemplateParams params = new CreateMessageTemplateParams();
+        params.name = "welcome_sms";
+        params.channel = MessageTemplateChannel.SMS;
+        params.purpose = "marketing";
+        params.sms = sms;
+        client.messageTemplates().create(params);
 
         assertNull(idempotencyHeader.get());
         assertTrue(requestBody.get().contains("\"request_meta\""));

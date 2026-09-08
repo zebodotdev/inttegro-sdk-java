@@ -1,9 +1,10 @@
 package com.inttegro.customers;
 
+import com.inttegro.CustomDataInput;
+
 import com.inttegro.RequestMeta;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 
 public class CreateCustomerParams {
     @JsonProperty("request_meta")
@@ -17,7 +18,11 @@ public class CreateCustomerParams {
     @JsonProperty("phone_number")
     public String phoneNumber;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomDataInput customData;
+    @JsonProperty("billing_address")
+    public Address billingAddress;
+    @JsonProperty("shipping_address")
+    public Address shippingAddress;
 
     public static Builder builder() { return new Builder(); }
 
@@ -36,10 +41,12 @@ public class CreateCustomerParams {
             params.phoneNumber = phoneNumber;
             return this;
         }
-        public Builder customData(Map<String, String> customData) {
+        public Builder customData(CustomDataInput customData) {
             params.customData = customData;
             return this;
         }
+        public Builder billingAddress(Address billingAddress) { params.billingAddress = billingAddress; return this; }
+        public Builder shippingAddress(Address shippingAddress) { params.shippingAddress = shippingAddress; return this; }
         public CreateCustomerParams build() { return params; }
     }
 }

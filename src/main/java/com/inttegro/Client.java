@@ -802,17 +802,6 @@ public class Client {
             this.client = client;
         }
 
-        public StoredFile create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return create(params, null);
-        }
-
-        public StoredFile create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            Map<String, Object> fields = client.toRequestMap(params);
-            Object file = fields.remove("file");
-            fields.remove("idempotency_key");
-            return client.multipartResource("/files/create", fields, Map.of("file", toPath(file)), options, true, "file", StoredFile.class);
-        }
-
         public StoredFile create(FileCreateParams params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
@@ -827,16 +816,8 @@ public class Client {
             return client.requestResource("/files/lookup", Map.of("file_id", fileId), "file", StoredFile.class);
         }
 
-        public StoredFilePage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/files/page", params, "page", StoredFilePage.class);
-        }
-
         public StoredFilePage page(FilePageParams params) throws IOException, InterruptedException, ApiException {
             return client.requestResource("/files/page", client.toRequestMap(params), "page", StoredFilePage.class);
-        }
-
-        public FileDownload contents(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.binaryRequest("POST", "/files/contents", params, true);
         }
 
         public FileDownload contents(FileContentsParams params) throws IOException, InterruptedException, ApiException {
@@ -855,14 +836,6 @@ public class Client {
             this.client = client;
         }
 
-        public FileLinkCreation create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return create(params, null);
-        }
-
-        public FileLinkCreation create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestWithOptions("POST", "/file_links/create", params, options, FileLinkCreation.class);
-        }
-
         public FileLinkCreation create(FileLinkCreateParams params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
@@ -875,16 +848,8 @@ public class Client {
             return client.requestResource("/file_links/lookup", Map.of("id", id), "file_link", FileLink.class);
         }
 
-        public FileLinkPage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/file_links/page", params, "page", FileLinkPage.class);
-        }
-
         public FileLinkPage page(FileLinkPageParams params) throws IOException, InterruptedException, ApiException {
             return client.requestResource("/file_links/page", client.toRequestMap(params), "page", FileLinkPage.class);
-        }
-
-        public FileLink revoke(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestResourceWithOptions("/file_links/revoke", params, options, "file_link", FileLink.class);
         }
 
         public FileLink revoke(FileLinkRevokeParams params) throws IOException, InterruptedException, ApiException {
@@ -923,8 +888,8 @@ public class Client {
             this.client = client;
         }
 
-        public UploadRequest create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestResourceWithOptions("/upload_requests/create", params, options, "upload_request", UploadRequest.class);
+        public UploadRequest create(UploadRequestCreateParams params) throws IOException, InterruptedException, ApiException {
+            return create(params, null);
         }
 
         public UploadRequest create(UploadRequestCreateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
@@ -935,16 +900,12 @@ public class Client {
             return client.requestResource("/upload_requests/lookup", Map.of("id", id), "upload_request", UploadRequest.class);
         }
 
-        public UploadRequestPage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/upload_requests/page", params, "page", UploadRequestPage.class);
-        }
-
         public UploadRequestPage page(UploadRequestPageParams params) throws IOException, InterruptedException, ApiException {
             return client.requestResource("/upload_requests/page", client.toRequestMap(params), "page", UploadRequestPage.class);
         }
 
-        public UploadRequest cancel(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestResourceWithOptions("/upload_requests/cancel", params, options, "upload_request", UploadRequest.class);
+        public UploadRequest cancel(UploadRequestCancelParams params) throws IOException, InterruptedException, ApiException {
+            return cancel(params, null);
         }
 
         public UploadRequest cancel(UploadRequestCancelParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
@@ -967,11 +928,6 @@ public class Client {
             return client.requestResourceWithOptions("/upload_requests/review", client.toRequestMap(params), options, "upload_request", UploadRequest.class);
         }
 
-        public UploadFulfillment fulfill(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
-            String uploadURL = (String) params.get("upload_url");
-            return client.mapper.treeToValue(client.multipartRequest(uploadURL, Map.of(), Map.of("file", toPath(params.get("file"))), null, false), UploadFulfillment.class);
-        }
-
         public UploadFulfillment fulfill(UploadRequestFulfillParams params) throws IOException, InterruptedException, ApiException {
             Map<String, Object> fields = client.toRequestMap(params);
             String uploadURL = (String) fields.get("upload_url");
@@ -986,20 +942,20 @@ public class Client {
             this.client = client;
         }
 
-        public MessageTemplate create(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public MessageTemplate create(CreateMessageTemplateParams params) throws IOException, InterruptedException, ApiException {
             return create(params, null);
         }
 
-        public MessageTemplate create(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestResourceWithOptions("/message_templates/create", params, options, "message_template", MessageTemplate.class);
+        public MessageTemplate create(CreateMessageTemplateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/message_templates/create", client.toRequestMap(params), options, "message_template", MessageTemplate.class);
         }
 
-        public MessageTemplate update(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public MessageTemplate update(UpdateMessageTemplateParams params) throws IOException, InterruptedException, ApiException {
             return update(params, null);
         }
 
-        public MessageTemplate update(Map<String, Object> params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            return client.requestResourceWithOptions("/message_templates/update", params, options, "message_template", MessageTemplate.class);
+        public MessageTemplate update(UpdateMessageTemplateParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
+            return client.requestResourceWithOptions("/message_templates/update", client.toRequestMap(params), options, "message_template", MessageTemplate.class);
         }
 
         public MessageTemplate publish(String templateId) throws IOException, InterruptedException, ApiException {
@@ -1022,11 +978,11 @@ public class Client {
             return client.requestResource("/message_templates/lookup", Map.of("id", templateId), "message_template", MessageTemplate.class);
         }
 
-        public MessageTemplatePage page(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public MessageTemplatePage page(PageMessageTemplatesParams params) throws IOException, InterruptedException, ApiException {
             return client.requestResource("/message_templates/page", params, "page", MessageTemplatePage.class);
         }
 
-        public MessageTemplatePreview renderPreview(Map<String, Object> params) throws IOException, InterruptedException, ApiException {
+        public MessageTemplatePreview renderPreview(RenderMessageTemplatePreviewParams params) throws IOException, InterruptedException, ApiException {
             return client.request("POST", "/message_templates/render_preview", params, MessageTemplatePreview.class);
         }
 
@@ -1557,16 +1513,6 @@ public class Client {
         }
 
         /**
-         * Cancels an OTP transaction (POST /otp/cancel).
-         *
-         * @param payload cancellation parameters including transaction_id and reason
-         * @return map containing canceled transaction information
-         */
-        public OtpTransaction cancel(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/otp/cancel", payload, "transaction", OtpTransaction.class);
-        }
-
-        /**
          * Backwards-compatible alias for initiate().
          */
         public OtpTransaction initialize(InitiateOtpParams params) throws IOException, InterruptedException, ApiException {
@@ -1769,7 +1715,7 @@ public class Client {
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if invalid account IDs, unsupported currencies, or accounts not compatible with currencies
          */
-        public PayoutSettings setDestinations(Map<String, String> destinations) throws IOException, InterruptedException, ApiException {
+        public PayoutSettings setDestinations(PayoutDestinations destinations) throws IOException, InterruptedException, ApiException {
             Map<String, Object> body = new HashMap<>();
             body.put("destinations", destinations);
             return client.requestResource("/payouts/set_destinations", body, "settings", PayoutSettings.class);
@@ -2008,21 +1954,6 @@ public class Client {
         }
 
         /**
-         * Archives a financial account (POST /financial_accounts/archive).
-         *
-         * <p>Note: This endpoint currently returns HTTP 501 (Not Implemented) per the API specification.</p>
-         *
-         * @param payload archive parameters
-         * @return map with response data (currently not implemented)
-         * @throws IOException if network communication fails
-         * @throws InterruptedException if the request is interrupted
-         * @throws ApiException if unauthorized (401) or not implemented (501)
-         */
-        public FinancialAccount archive(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/financial_accounts/archive", payload, "account", FinancialAccount.class);
-        }
-
-        /**
          * Retrieves a paginated list of financial accounts (POST /financial_accounts/page).
          *
          * @param params pagination parameters
@@ -2033,21 +1964,6 @@ public class Client {
          */
         public FinancialAccountsPage page(PageFinancialAccountsParams params) throws IOException, InterruptedException, ApiException {
             return client.requestResource("/financial_accounts/page", params, "page", FinancialAccountsPage.class);
-        }
-
-        /**
-         * Verifies a financial account (POST /financial_accounts/verify).
-         *
-         * <p>Note: This endpoint currently returns HTTP 501 (Not Implemented) per the API specification.</p>
-         *
-         * @param payload verification parameters
-         * @return map with response data (currently not implemented)
-         * @throws IOException if network communication fails
-         * @throws InterruptedException if the request is interrupted
-         * @throws ApiException if unauthorized (401) or not implemented (501)
-         */
-        public FinancialAccount verify(Map<String, Object> payload) throws IOException, InterruptedException, ApiException {
-            return client.requestResource("/financial_accounts/verify", payload, "account", FinancialAccount.class);
         }
 
         /**

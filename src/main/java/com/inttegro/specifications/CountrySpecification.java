@@ -2,7 +2,6 @@ package com.inttegro.specifications;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.Map;
 
 public class CountrySpecification {
     @JsonProperty("country_code") public String countryCode;
@@ -11,8 +10,8 @@ public class CountrySpecification {
     @JsonProperty("payment_methods") public List<String> paymentMethods;
     @JsonProperty("payout_schedules") public List<String> payoutSchedules;
     @JsonProperty("bt_aging_specs") public List<String> btAgingSpecs;
-    @JsonProperty("legal_entity_types") public List<Map<String, Object>> legalEntityTypes;
-    @JsonProperty("financial_account_types") public List<Map<String, Object>> financialAccountTypes;
-    @JsonProperty("id_document_types") public List<Map<String, Object>> idDocumentTypes;
+    @JsonProperty("legal_entity_types") public List<String> legalEntityTypes;
+    @JsonProperty("financial_account_types") public List<String> financialAccountTypes;
+    @JsonProperty("id_document_types") public List<String> idDocumentTypes;
     public CountryBankDirectory banks;
 }

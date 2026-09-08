@@ -1,10 +1,11 @@
 package com.inttegro.financialaccounts;
 
+import com.inttegro.CustomDataInput;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.bankaccounts.BankAccountConfig;
 import com.inttegro.bankaccounts.BankAccountOwner;
 import com.inttegro.wallets.WalletConfig;
-import java.util.Map;
 
 public class FinancialAccountCreateParams {
     public String label;
@@ -16,8 +17,8 @@ public class FinancialAccountCreateParams {
     @JsonProperty("push_configuration") public PullPushConfig pushConfiguration;
     public WalletConfig wallet;
     @JsonProperty("bank_account") public BankAccountConfig bankAccount;
-    @JsonProperty("dosh_account") public Map<String, Object> doshAccount;
-    @JsonProperty("custom_data") public Map<String, String> customData;
+    @JsonProperty("dosh_account") public DoshAccount doshAccount;
+    @JsonProperty("custom_data") public CustomDataInput customData;
     public BankAccountOwner owner;
 
     public static Builder builder() { return new Builder(); }
@@ -33,8 +34,8 @@ public class FinancialAccountCreateParams {
         public Builder pushConfiguration(PullPushConfig pushConfiguration) { params.pushConfiguration = pushConfiguration; return this; }
         public Builder wallet(WalletConfig wallet) { params.wallet = wallet; return this; }
         public Builder bankAccount(BankAccountConfig bankAccount) { params.bankAccount = bankAccount; return this; }
-        public Builder doshAccount(Map<String, Object> doshAccount) { params.doshAccount = doshAccount; return this; }
-        public Builder customData(Map<String, String> customData) { params.customData = customData; return this; }
+        public Builder doshAccount(DoshAccount doshAccount) { params.doshAccount = doshAccount; return this; }
+        public Builder customData(CustomDataInput customData) { params.customData = customData; return this; }
         public Builder owner(BankAccountOwner owner) { params.owner = owner; return this; }
         public FinancialAccountCreateParams build() { return params; }
     }

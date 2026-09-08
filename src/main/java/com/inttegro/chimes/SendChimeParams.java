@@ -1,5 +1,7 @@
 package com.inttegro.chimes;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +12,7 @@ public class SendChimeParams {
     public ChimeTransport transport;
     public String sender;
     public String purpose;
-    @JsonProperty("custom_data") public Map<String, String> customData;
+    @JsonProperty("custom_data") public CustomData customData;
     @JsonProperty("idempotency_key") public String idempotencyKey;
 
     public static Builder builder() { return new Builder(); }
@@ -22,7 +24,7 @@ public class SendChimeParams {
         public Builder transport(ChimeTransport transport) { params.transport = transport; return this; }
         public Builder sender(String sender) { params.sender = sender; return this; }
         public Builder purpose(String purpose) { params.purpose = purpose; return this; }
-        public Builder customData(Map<String, String> customData) { params.customData = customData; return this; }
+        public Builder customData(CustomData customData) { params.customData = customData; return this; }
         public Builder idempotencyKey(String idempotencyKey) { params.idempotencyKey = idempotencyKey; return this; }
         public SendChimeParams build() { return params; }
     }

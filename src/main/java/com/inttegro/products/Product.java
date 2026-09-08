@@ -1,5 +1,7 @@
 package com.inttegro.products;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +22,12 @@ public class Product {
     public ProductDefaultUnitPrice defaultUnitPrice;
     public List<ProductPriceSummary> prices;
     public ProductShipment shipment;
-    public ProductMediaItem[] media;
-    public Map<String, String> attributes;
+    public ProductDimensions dimensions;
+    @JsonProperty("unit_dimension") public String unitDimension;
+    public ProductMedia media;
+    public List<ProductAttribute> attributes;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomData customData;
     public Boolean active;
     public Boolean archived;
     @JsonProperty("created_at")

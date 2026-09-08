@@ -1,5 +1,7 @@
 package com.inttegro.orders;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.prices.PriceParams;
 import com.inttegro.products.ProductType;
@@ -16,7 +18,7 @@ public class ProductLineItemParams {
     @JsonProperty("price_id") public String priceId;
     public String reference;
     @JsonProperty("tax_code") public String taxCode;
-    @JsonProperty("custom_data") public Map<String, String> customData;
+    @JsonProperty("custom_data") public CustomData customData;
 
     public static Builder builder() { return new Builder(); }
     public static class Builder {
@@ -30,7 +32,7 @@ public class ProductLineItemParams {
         public Builder priceId(String priceId) { item.priceId = priceId; return this; }
         public Builder reference(String reference) { item.reference = reference; return this; }
         public Builder taxCode(String taxCode) { item.taxCode = taxCode; return this; }
-        public Builder customData(Map<String, String> customData) { item.customData = customData; return this; }
+        public Builder customData(CustomData customData) { item.customData = customData; return this; }
         public ProductLineItemParams build() { return item; }
     }
 }

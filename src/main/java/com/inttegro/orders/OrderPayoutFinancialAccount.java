@@ -10,6 +10,7 @@ import com.inttegro.customers.Shipping;
 import com.inttegro.paymentmethods.PaymentMethod;
 import com.inttegro.refunds.Refund;
 import com.inttegro.financialaccounts.FinancialAccountType;
+import com.inttegro.financialaccounts.DoshAccount;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ public class OrderPayoutFinancialAccount {
     public FinancialAccountType type;
     public OrderPayoutWallet wallet;
     @JsonProperty("bank_account") public BankAccountConfig bankAccount;
-    @JsonProperty("dosh_account") public Map<String, Object> doshAccount;
+    @JsonProperty("dosh_account") public DoshAccount doshAccount;
 
     public static Builder builder() { return new Builder(); }
 
@@ -28,7 +29,7 @@ public class OrderPayoutFinancialAccount {
         public Builder type(FinancialAccountType type) { account.type = type; return this; }
         public Builder wallet(OrderPayoutWallet wallet) { account.wallet = wallet; return this; }
         public Builder bankAccount(BankAccountConfig bankAccount) { account.bankAccount = bankAccount; return this; }
-        public Builder doshAccount(Map<String, Object> doshAccount) { account.doshAccount = doshAccount; return this; }
+        public Builder doshAccount(DoshAccount doshAccount) { account.doshAccount = doshAccount; return this; }
         public OrderPayoutFinancialAccount build() { return account; }
     }
 }

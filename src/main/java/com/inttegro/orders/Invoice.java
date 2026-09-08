@@ -17,5 +17,5 @@ public class Invoice {
     public String id;
     public String number;
     public InvoiceFormat format;
-    public Object deliveries;
+    public List<OrderDocumentDeliveryAttempt> deliveries;
 }

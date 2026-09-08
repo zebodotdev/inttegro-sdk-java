@@ -1,5 +1,7 @@
 package com.inttegro.refunds;
 
+import com.inttegro.CustomData;
+
 import com.inttegro.RequestMeta;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -14,7 +16,7 @@ public class CreateRefundParams {
     public RefundReason reason;
     @JsonProperty("reason_details") public String reasonDetails;
     public String reference;
-    @JsonProperty("custom_data") public Map<String, String> customData;
+    @JsonProperty("custom_data") public CustomData customData;
     @JsonProperty("request_meta") public RequestMeta requestMeta;
 
     public static Builder builder() { return new Builder(); }
@@ -28,7 +30,7 @@ public class CreateRefundParams {
         public Builder reason(RefundReason reason) { params.reason = reason; return this; }
         public Builder reasonDetails(String reasonDetails) { params.reasonDetails = reasonDetails; return this; }
         public Builder reference(String reference) { params.reference = reference; return this; }
-        public Builder customData(Map<String, String> customData) { params.customData = customData; return this; }
+        public Builder customData(CustomData customData) { params.customData = customData; return this; }
         public Builder requestMeta(RequestMeta requestMeta) { params.requestMeta = requestMeta; return this; }
         public CreateRefundParams build() { params.lineItems = lineItems; return params; }
     }

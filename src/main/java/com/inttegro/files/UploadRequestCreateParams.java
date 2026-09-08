@@ -1,5 +1,7 @@
 package com.inttegro.files;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.nio.file.Path;
 import java.util.List;
@@ -12,7 +14,7 @@ public class UploadRequestCreateParams {
     @JsonProperty("expires_at")
     public String expiresAt;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomData customData;
     public String purpose;
     public Actor recipient;
     public Actor requester;
@@ -27,7 +29,7 @@ public class UploadRequestCreateParams {
         public Builder constraints(UploadConstraints constraints) { params.constraints = constraints; return this; }
         public Builder display(UploadDisplay display) { params.display = display; return this; }
         public Builder expiresAt(String expiresAt) { params.expiresAt = expiresAt; return this; }
-        public Builder customData(Map<String, String> customData) { params.customData = customData; return this; }
+        public Builder customData(CustomData customData) { params.customData = customData; return this; }
         public Builder purpose(String purpose) { params.purpose = purpose; return this; }
         public Builder recipient(Actor recipient) { params.recipient = recipient; return this; }
         public Builder requester(Actor requester) { params.requester = requester; return this; }

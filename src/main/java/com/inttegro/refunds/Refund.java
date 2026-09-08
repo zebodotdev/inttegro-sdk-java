@@ -1,5 +1,7 @@
 package com.inttegro.refunds;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.money.Amount;
@@ -16,7 +18,7 @@ public class Refund {
     public RefundReason reason;
     @JsonProperty("reason_details") public String reasonDetails;
     public String reference;
-    @JsonProperty("custom_data") public Map<String, String> customData;
+    @JsonProperty("custom_data") public CustomData customData;
     @JsonProperty("created_at") public String createdAt;
     @JsonProperty("processing_at") public String processingAt;
     @JsonProperty("succeeded_at") public String succeededAt;

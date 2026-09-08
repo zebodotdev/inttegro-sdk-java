@@ -1,5 +1,7 @@
 package com.inttegro.orders;
 
+import com.inttegro.CustomData;
+
 import com.inttegro.RequestMeta;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -46,7 +48,7 @@ public class OrderCreateParams {
     @JsonProperty("line_items")
     public List<OrderLineItemParams> lineItems;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomData customData;
     @JsonProperty("billing_details")
     public BillingDetails billingDetails;
     public Shipping shipping;
@@ -71,7 +73,7 @@ public class OrderCreateParams {
         public Builder number(String number) { params.number = number; return this; }
         public Builder receiptNumber(String receiptNumber) { params.receiptNumber = receiptNumber; return this; }
         public Builder lineItem(OrderLineItemParams item) { this.items.add(item); return this; }
-        public Builder customData(Map<String, String> data) { params.customData = data; return this; }
+        public Builder customData(CustomData data) { params.customData = data; return this; }
         public Builder billingDetails(BillingDetails details) { params.billingDetails = details; return this; }
         public Builder shipping(Shipping shipping) { params.shipping = shipping; return this; }
         public OrderCreateParams build() { params.lineItems = items; return params; }

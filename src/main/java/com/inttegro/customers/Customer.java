@@ -1,9 +1,13 @@
 package com.inttegro.customers;
 
+import com.inttegro.CustomData;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 
 public class Customer {
+    public CustomerBalance balance;
+    @JsonProperty("billing_address")
+    public Address billingAddress;
     public String id;
     public String name;
     public String title;
@@ -14,7 +18,12 @@ public class Customer {
     @JsonProperty("phone_number")
     public String phoneNumber;
     @JsonProperty("custom_data")
-    public Map<String, String> customData;
+    public CustomData customData;
     @JsonProperty("created_at")
     public String createdAt;
+    public Boolean guest;
+    @JsonProperty("shipping_address")
+    public Address shippingAddress;
+    @JsonProperty("updated_at")
+    public String updatedAt;
 }
