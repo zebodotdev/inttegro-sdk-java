@@ -33,4 +33,13 @@ public class Product {
     public OffsetDateTime archivedAt;
     @JsonProperty("published_at")
     public OffsetDateTime publishedAt;
+
+    /** Whether the product is archived. */
+    public boolean isArchived() { return archivedAt != null; }
+
+    /** Whether the product is currently published and available. */
+    public boolean isPublished() { return Boolean.TRUE.equals(active) && !isArchived(); }
+
+    /** Whether the product has a recorded first publication. */
+    public boolean wasEverPublished() { return publishedAt != null; }
 }

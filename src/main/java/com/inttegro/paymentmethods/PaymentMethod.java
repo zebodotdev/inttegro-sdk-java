@@ -29,4 +29,13 @@ public class PaymentMethod {
     public OffsetDateTime createdAt;
     @JsonProperty("verified_at")
     public OffsetDateTime verifiedAt;
+
+    /** Whether the payment method is archived. */
+    public boolean isArchived() { return archivedAt != null; }
+
+    /** Whether payment-method ownership has been verified. */
+    public boolean isVerified() { return verifiedAt != null; }
+
+    /** Whether the payment method may be reused in new payment flows. */
+    public boolean isReusable() { return active && !isArchived() && !Boolean.TRUE.equals(ephemeral); }
 }

@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.CustomData;
 import com.inttegro.payments.Payment;
+import com.inttegro.payments.PaymentNextAction;
 import com.inttegro.refunds.Refund;
 import java.util.List;
 
@@ -30,4 +31,23 @@ public class Order {
     @JsonProperty("expires_at") public OffsetDateTime expiresAt;
     @JsonProperty("payment_due_at") public OffsetDateTime paymentDueAt;
     public List<Refund> refunds;
+
+    /** Whether the order has recorded payment, including after completion. */
+    public boolean isPaid() { return status == OrderStatus.PAID || paidAt != null; }
+
+    /** Whether the order is waiting for payment. */
+    public boolean requiresPayment() { return status == OrderStatus.REQUIRES_PAYMENT; }
+
+    /** Whether the order has reached a final state. */
+    public boolean isTerminal() {
+        return status == OrderStatus.PAID
+                || status == OrderStatus.COMPLETED
+                || status == OrderStatus.CANCELED
+                || status == OrderStatus.EXPIRED;
+    }
+
+    /** Nested payment action details, when the order's payment requires action. */
+    public PaymentNextAction requiredPaymentAction() {
+        return payment == null ? null : payment.requiredAction();
+    }
 }
