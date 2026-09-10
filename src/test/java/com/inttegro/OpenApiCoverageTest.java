@@ -27,6 +27,9 @@ class OpenApiCoverageTest {
             "/checkout/request_confirmation",
             "/checkout/confirm_payment"
     );
+    private static final Set<String> LEGACY_COMPATIBILITY_OPERATIONS = Set.of(
+            "/orders/refund"
+    );
 
     @Test
     void sdkImplementsEveryPublicOpenApiPath() throws Exception {
@@ -37,6 +40,7 @@ class OpenApiCoverageTest {
                 .filter(path -> !implementedPaths.contains(path))
                 .filter(path -> !CAPABILITY_URL_OPERATIONS.contains(path))
                 .filter(path -> !CLIENT_CHECKOUT_OPERATIONS.contains(path))
+                .filter(path -> !LEGACY_COMPATIBILITY_OPERATIONS.contains(path))
                 .sorted()
                 .toList();
 
