@@ -1,5 +1,6 @@
 package com.inttegro.files;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,7 +14,7 @@ public class FileLinkCreateParams {
     public Actor createdBy;
     public FileLinkDelivery delivery;
     @JsonProperty("expires_at")
-    public String expiresAt;
+    public OffsetDateTime expiresAt;
     @JsonProperty("file_id")
     public String fileId;
     @JsonProperty("custom_data")
@@ -26,7 +27,7 @@ public class FileLinkCreateParams {
         public Builder access(FileLinkAccess access) { params.access = access; return this; }
         public Builder createdBy(Actor createdBy) { params.createdBy = createdBy; return this; }
         public Builder delivery(FileLinkDelivery delivery) { params.delivery = delivery; return this; }
-        public Builder expiresAt(String expiresAt) { params.expiresAt = expiresAt; return this; }
+        public Builder expiresAt(OffsetDateTime expiresAt) { params.expiresAt = expiresAt; return this; }
         public Builder fileId(String fileId) { params.fileId = fileId; return this; }
         public Builder customData(CustomData customData) { params.customData = customData; return this; }
         public FileLinkCreateParams build() { return params; }

@@ -1,5 +1,6 @@
 package com.inttegro.paymentmethods;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
@@ -8,8 +9,8 @@ public class PaymentMethodVerificationSession {
     public String paymentMethodId;
     public String status;
     @JsonProperty("token_sent_at")
-    public String tokenSentAt;
+    public OffsetDateTime tokenSentAt;
     @JsonProperty("expires_at")
-    public String expiresAt;
+    public OffsetDateTime expiresAt;
     public VerificationDelivery delivery;
 }

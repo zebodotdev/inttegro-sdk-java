@@ -1,16 +1,5 @@
 package com.inttegro.orders;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.customers.Address;
-import com.inttegro.customers.BillingDetails;
-import com.inttegro.customers.CustomerData;
-import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethod;
-import com.inttegro.refunds.Refund;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 public class OrderLineItem {
@@ -18,6 +7,7 @@ public class OrderLineItem {
     public ProductLineItem product;
     public FeeLineItem fee;
     public ShippingLineItem shipping;
+    public DiscountLineItem discount;
 
     public static Builder builder() { return new Builder(); }
 
@@ -27,6 +17,7 @@ public class OrderLineItem {
         public Builder product(ProductLineItem product) { item.product = product; return this; }
         public Builder fee(FeeLineItem fee) { item.fee = fee; return this; }
         public Builder shipping(ShippingLineItem shipping) { item.shipping = shipping; return this; }
+        public Builder discount(DiscountLineItem discount) { item.discount = discount; return this; }
         public OrderLineItem build() { return item; }
     }
 

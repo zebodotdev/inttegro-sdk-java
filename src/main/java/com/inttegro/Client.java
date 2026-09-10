@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.inttegro.apps.*;
 import com.inttegro.balances.*;
 import com.inttegro.chimes.*;
@@ -70,7 +72,7 @@ import java.util.UUID;
      * Thread safety: immutable after construction; share freely across goroutines/threads.
      */
 public class Client {
-    public static final String VERSION = "5.2.0";
+    public static final String VERSION = "6.0.0";
 
     private static final String DEFAULT_BASE_URL = "https://api.inttegro.com";
     private static final String USER_AGENT = "inttegro-sdk-java/" + VERSION;
@@ -182,6 +184,8 @@ public class Client {
         this.baseUrl = baseUrl != null && !baseUrl.isEmpty() ? baseUrl : DEFAULT_BASE_URL;
         this.httpClient = httpClient != null ? httpClient : HttpClient.newHttpClient();
         this.mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.random = new SecureRandom();
         OpenTelemetry configuredOpenTelemetry = openTelemetry != null ? openTelemetry : GlobalOpenTelemetry.get();
@@ -1003,7 +1007,7 @@ public class Client {
         }
 
         /**
-         * Creates a new order (POST /orders/new).
+         * Creates a new order (POST /orders/create).
          *
          * <p>Creates a new order in the Inttegro platform. Supports two flows:</p>
          * <ol>
@@ -1024,10 +1028,6 @@ public class Client {
          */
         public Order create(OrderCreateParams params) throws IOException, InterruptedException, ApiException {
             return requestOrder("/orders/create", params);
-        }
-
-        public Order newOrder(OrderCreateParams params) throws IOException, InterruptedException, ApiException {
-            return requestOrder("/orders/new", params);
         }
 
         /**
@@ -1209,22 +1209,6 @@ public class Client {
 
         public Order cancel(OrderCancelParams params) throws IOException, InterruptedException, ApiException {
             return requestOrder("/orders/cancel", params);
-        }
-
-        /**
-         * Compatibility alias for {@link RefundsClient#create(CreateRefundParams)}.
-         * Accepts the same line-item refund request and returns the created refund.
-         */
-        @Deprecated
-        public Refund refund(CreateRefundParams params) throws IOException, InterruptedException, ApiException {
-            return requestResource("/orders/refund", params, "refund", Refund.class);
-        }
-
-        /** Compatibility alias with an explicit idempotency key. */
-        @Deprecated
-        public Refund refund(CreateRefundParams params, RequestOptions options) throws IOException, InterruptedException, ApiException {
-            JsonNode response = client.requestWithOptions("POST", "/orders/refund", params, options, JsonNode.class);
-            return decodeResource(response, "refund", Refund.class);
         }
 
         /**
@@ -1879,7 +1863,7 @@ public class Client {
         /**
          * Retrieves the current balances snapshot (POST /balances).
          *
-         * @return {@link BalanceSnapshot} containing per-currency balance breakdowns
+         * @return {@link BalanceSnapshot} containing the current GHS balance breakdown
          * @throws IOException if network communication fails
          * @throws InterruptedException if the request is interrupted
          * @throws ApiException if unauthorized (401)

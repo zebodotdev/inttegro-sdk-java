@@ -1,25 +1,27 @@
 package com.inttegro.purchaseintents;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
 public class PurchaseIntent {
-    public String id;
-    @JsonProperty("product_id")
-    public String productId;
-    @JsonProperty("price_id")
-    public String priceId;
-    public PurchaseIntentQuantity quantity;
-    @JsonProperty("adjustable_quantity")
-    public Boolean adjustableQuantity;
-    @JsonProperty("allow_variants")
-    public Boolean allowVariants;
-    public PurchaseIntentStatus status;
-    @JsonProperty("created_at")
-    public String createdAt;
-    @JsonProperty("updated_at")
-    public String updatedAt;
     public PurchaseIntentActivityLog activity;
-    public com.inttegro.products.Product product;
+    @JsonProperty("allow_variants")
+    public boolean allowVariants;
+    @JsonProperty("created_at")
+    public OffsetDateTime createdAt;
+    @JsonProperty("expires_at")
+    public OffsetDateTime expiresAt;
+    public String id;
+    @JsonProperty("inactive_at")
+    public OffsetDateTime inactiveAt;
+    public PurchaseIntentMerchant merchant;
     public PurchaseIntentPrice price;
+    public PurchaseIntentProduct product;
+    public PurchaseIntentQuantity quantity;
+    public PurchaseIntentStatus status;
+    @JsonProperty("updated_at")
+    public OffsetDateTime updatedAt;
+    public PurchaseIntentUsage usage;
+    @JsonProperty("variant_set")
+    public PurchaseIntentVariantSet variantSet;
 }

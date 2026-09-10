@@ -1,5 +1,6 @@
 package com.inttegro.keys;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -9,17 +10,17 @@ public class SecretKey {
     @JsonProperty("token_type")
     public SecretKeyTokenType tokenType;
     @JsonProperty("issued_at")
-    public String issuedAt;
+    public OffsetDateTime issuedAt;
     @JsonProperty("updated_at")
-    public String updatedAt;
+    public OffsetDateTime updatedAt;
     @JsonProperty("expires_at")
-    public String expiresAt;
+    public OffsetDateTime expiresAt;
     public SecretKeyStatus status;
     public Boolean active;
     @JsonProperty("revoked_at")
-    public String revokedAt;
+    public OffsetDateTime revokedAt;
     @JsonProperty("last_used_at")
-    public String lastUsedAt;
+    public OffsetDateTime lastUsedAt;
     @JsonProperty("usage_count")
     public Integer usageCount;
 }

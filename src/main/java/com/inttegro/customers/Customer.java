@@ -1,5 +1,6 @@
 package com.inttegro.customers;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,10 +21,10 @@ public class Customer {
     @JsonProperty("custom_data")
     public CustomData customData;
     @JsonProperty("created_at")
-    public String createdAt;
+    public OffsetDateTime createdAt;
     public Boolean guest;
     @JsonProperty("shipping_address")
     public Address shippingAddress;
     @JsonProperty("updated_at")
-    public String updatedAt;
+    public OffsetDateTime updatedAt;
 }

@@ -1,5 +1,6 @@
 package com.inttegro.files;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -16,7 +17,7 @@ public final class StoredFile {
     public Long size;
     public String title;
     @JsonProperty("custom_data") public CustomData customData;
-    @JsonProperty("created_at") public String createdAt;
-    @JsonProperty("updated_at") public String updatedAt;
-    @JsonProperty("deleted_at") public String deletedAt;
+    @JsonProperty("created_at") public OffsetDateTime createdAt;
+    @JsonProperty("updated_at") public OffsetDateTime updatedAt;
+    @JsonProperty("deleted_at") public OffsetDateTime deletedAt;
 }

@@ -1,20 +1,13 @@
 package com.inttegro.payments;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.customers.Address;
-import com.inttegro.customers.BillingDetails;
-import com.inttegro.customers.CustomerData;
-import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethod;
-import com.inttegro.refunds.Refund;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 public class ConfirmPaymentAction {
-    @JsonProperty("expires_at") public String expiresAt;
+    @JsonProperty("expires_at") public OffsetDateTime expiresAt;
     public String scheme;
-    public ConfirmPaymentRequest request;
+    public ConfirmationRequest request;
+    public ConfirmationAttempt attempt;
+    public boolean confirmed;
+    public String status;
 }

@@ -10,12 +10,8 @@ import com.inttegro.customers.Address;
 import com.inttegro.customers.BillingDetails;
 import com.inttegro.customers.CustomerData;
 import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethod;
-import com.inttegro.refunds.Refund;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 public class OrderCreateParams {
     @JsonProperty("request_meta")
@@ -35,9 +31,6 @@ public class OrderCreateParams {
     @JsonProperty("execute_payment")
     public Boolean executePayment;
     public Boolean finalize;
-    @Deprecated
-    @JsonProperty("idempotency_key")
-    public String idempotencyKey;
     @JsonProperty("checkout_settings")
     public CheckoutSettings checkoutSettings;
     @JsonProperty("payout_settings")
@@ -66,8 +59,6 @@ public class OrderCreateParams {
         public Builder statementDescriptorPrefix(String prefix) { params.statementDescriptorPrefix = prefix; return this; }
         public Builder executePayment(boolean execute) { params.executePayment = execute; return this; }
         public Builder finalizeOrder(boolean finalize) { params.finalize = finalize; return this; }
-        @Deprecated
-        public Builder idempotencyKey(String key) { params.idempotencyKey = key; return this; }
         public Builder checkoutSettings(CheckoutSettings settings) { params.checkoutSettings = settings; return this; }
         public Builder payoutSettings(OrderPayoutSettings settings) { params.payoutSettings = settings; return this; }
         public Builder number(String number) { params.number = number; return this; }

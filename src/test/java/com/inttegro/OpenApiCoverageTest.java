@@ -27,7 +27,6 @@ class OpenApiCoverageTest {
             "/checkout/request_confirmation",
             "/checkout/confirm_payment"
     );
-
     @Test
     void sdkImplementsEveryPublicOpenApiPath() throws Exception {
         Set<String> openApiPaths = loadOpenApiPaths(findOpenApiSpec());

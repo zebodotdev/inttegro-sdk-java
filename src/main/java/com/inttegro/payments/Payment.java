@@ -1,31 +1,33 @@
 package com.inttegro.payments;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.inttegro.balances.BalanceTransaction;
+import com.inttegro.balances.PayoutConfiguration;
 import com.inttegro.money.Amount;
-import com.inttegro.customers.Address;
-import com.inttegro.customers.BillingDetails;
-import com.inttegro.customers.CustomerData;
-import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethod;
-import com.inttegro.refunds.Refund;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
+/** Payment projection returned inside an order. */
 public class Payment {
     public String id;
-    public PaymentStatus status;
     @JsonProperty("statement_descriptor") public String statementDescriptor;
-    public Amount amount;
-    @JsonProperty("payment_method") public PaymentMethod paymentMethod;
+    @JsonProperty("payment_method_types") public List<String> paymentMethodTypes;
+    @JsonProperty("payment_method") public PaymentMethodSnapshot paymentMethod;
+    @JsonProperty("billing_details") public PaymentBillingDetails billingDetails;
+    public PaymentCustomer customer;
     @JsonProperty("latest_attempt") public PaymentAttempt latestAttempt;
+    public Amount amount;
     @JsonProperty("next_action") public PaymentNextAction nextAction;
-    @JsonProperty("balance_transaction") public com.inttegro.balances.BalanceTransaction balanceTransaction;
-    @JsonProperty("payout_configuration") public com.inttegro.balances.PayoutConfiguration payoutConfiguration;
-    @JsonProperty("initiated_at") public String initiatedAt;
-    @JsonProperty("executed_at") public String executedAt;
-    @JsonProperty("paid_at") public String paidAt;
-    @JsonProperty("failed_at") public String failedAt;
+    @JsonProperty("latest_error") public PaymentError latestError;
+    @JsonProperty("balance_transaction") public BalanceTransaction balanceTransaction;
+    @JsonProperty("payout_configuration") public PayoutConfiguration payoutConfiguration;
+    public PaymentStatus status;
+    @JsonProperty("initiated_at") public OffsetDateTime initiatedAt;
+    @JsonProperty("executed_at") public OffsetDateTime executedAt;
+    @JsonProperty("due_at") public OffsetDateTime dueAt;
+    @JsonProperty("canceled_at") public OffsetDateTime canceledAt;
+    @JsonProperty("expired_at") public OffsetDateTime expiredAt;
+    @JsonProperty("paid_at") public OffsetDateTime paidAt;
+    @JsonProperty("paid_offline") public Boolean paidOffline;
+    @JsonProperty("failed_at") public OffsetDateTime failedAt;
 }

@@ -1,28 +1,14 @@
 package com.inttegro.orders;
 
-import com.inttegro.CustomData;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.money.Amount;
-import com.inttegro.customers.Address;
-import com.inttegro.customers.BillingDetails;
-import com.inttegro.customers.CustomerData;
-import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethod;
-import com.inttegro.refunds.Refund;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 public class ShippingLineItem {
     public String id;
     public Amount fee;
+    public String label;
     @JsonProperty("tax_code")
     public String taxCode;
-    @JsonProperty("custom_data")
-    public CustomData customData;
 
     public static Builder builder() { return new Builder(); }
 
@@ -30,8 +16,8 @@ public class ShippingLineItem {
         private final ShippingLineItem item = new ShippingLineItem();
         public Builder id(String id) { item.id = id; return this; }
         public Builder fee(Amount fee) { item.fee = fee; return this; }
+        public Builder label(String label) { item.label = label; return this; }
         public Builder taxCode(String taxCode) { item.taxCode = taxCode; return this; }
-        public Builder customData(CustomData customData) { item.customData = customData; return this; }
         public ShippingLineItem build() { return item; }
     }
 }

@@ -1,16 +1,10 @@
 package com.inttegro.payments;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.inttegro.customers.Address;
-import com.inttegro.customers.BillingDetails;
-import com.inttegro.customers.CustomerData;
-import com.inttegro.customers.Shipping;
-import com.inttegro.paymentmethods.PaymentMethod;
-import com.inttegro.refunds.Refund;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
-public class RedirectAction { public String url; }
+public class RedirectAction {
+    @JsonProperty("valid_until") public OffsetDateTime validUntil;
+    @JsonProperty("latest_visit") public RedirectVisit latestVisit;
+    @JsonProperty("redirect_url") public String redirectUrl;
+}

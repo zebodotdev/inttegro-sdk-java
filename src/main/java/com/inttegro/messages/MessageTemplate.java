@@ -1,5 +1,6 @@
 package com.inttegro.messages;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -19,8 +20,8 @@ public final class MessageTemplate {
     public MessageTemplateEmailContent email;
     public List<MessageTemplateVariable> variables;
     public List<String> attachments;
-    @JsonProperty("created_at") public String createdAt;
-    @JsonProperty("updated_at") public String updatedAt;
-    @JsonProperty("published_at") public String publishedAt;
-    @JsonProperty("archived_at") public String archivedAt;
+    @JsonProperty("created_at") public OffsetDateTime createdAt;
+    @JsonProperty("updated_at") public OffsetDateTime updatedAt;
+    @JsonProperty("published_at") public OffsetDateTime publishedAt;
+    @JsonProperty("archived_at") public OffsetDateTime archivedAt;
 }

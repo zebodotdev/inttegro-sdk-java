@@ -1,5 +1,6 @@
 package com.inttegro.files;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,7 +13,7 @@ public class UploadRequestCreateParams {
     public UploadConstraints constraints;
     public UploadDisplay display;
     @JsonProperty("expires_at")
-    public String expiresAt;
+    public OffsetDateTime expiresAt;
     @JsonProperty("custom_data")
     public CustomData customData;
     public String purpose;
@@ -28,7 +29,7 @@ public class UploadRequestCreateParams {
         public Builder attempts(UploadAttempts attempts) { params.attempts = attempts; return this; }
         public Builder constraints(UploadConstraints constraints) { params.constraints = constraints; return this; }
         public Builder display(UploadDisplay display) { params.display = display; return this; }
-        public Builder expiresAt(String expiresAt) { params.expiresAt = expiresAt; return this; }
+        public Builder expiresAt(OffsetDateTime expiresAt) { params.expiresAt = expiresAt; return this; }
         public Builder customData(CustomData customData) { params.customData = customData; return this; }
         public Builder purpose(String purpose) { params.purpose = purpose; return this; }
         public Builder recipient(Actor recipient) { params.recipient = recipient; return this; }

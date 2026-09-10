@@ -1,5 +1,6 @@
 package com.inttegro.chimes;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,7 +9,7 @@ import java.util.Map;
 
 public class Chime {
     public String id;
-    @JsonProperty("created_at") public String createdAt;
+    @JsonProperty("created_at") public OffsetDateTime createdAt;
     @JsonProperty("full_message") public String fullMessage;
     public ChimeRecipient recipient;
     @JsonProperty("sender_id") public String senderId;

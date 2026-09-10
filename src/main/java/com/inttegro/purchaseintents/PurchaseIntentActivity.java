@@ -1,8 +1,8 @@
 package com.inttegro.purchaseintents;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.money.Amount;
-import java.util.List;
 
 public class PurchaseIntentActivity {
     public String id;
@@ -25,5 +25,5 @@ public class PurchaseIntentActivity {
     @JsonProperty("error_code")
     public String errorCode;
     @JsonProperty("created_at")
-    public String createdAt;
+    public OffsetDateTime createdAt;
 }
