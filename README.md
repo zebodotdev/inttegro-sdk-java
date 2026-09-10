@@ -108,7 +108,7 @@ var refund = inttegro.refunds().create(CreateRefundParams.builder()
 System.out.println(refund.id + " " + refund.status);
 ```
 
-Use `refunds().cancel`, `refunds().lookup`, and `refunds().page` to manage the refund lifecycle. `orders().refund` remains a deprecated compatibility alias and returns the created `Refund` directly.
+Use `refunds().create`, `refunds().cancel`, `refunds().lookup`, and `refunds().page` to manage the refund lifecycle.
 
 ## Observe SDK operations
 

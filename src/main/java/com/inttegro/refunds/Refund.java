@@ -1,5 +1,6 @@
 package com.inttegro.refunds;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -19,9 +20,9 @@ public class Refund {
     @JsonProperty("reason_details") public String reasonDetails;
     public String reference;
     @JsonProperty("custom_data") public CustomData customData;
-    @JsonProperty("created_at") public String createdAt;
-    @JsonProperty("processing_at") public String processingAt;
-    @JsonProperty("succeeded_at") public String succeededAt;
-    @JsonProperty("failed_at") public String failedAt;
-    @JsonProperty("canceled_at") public String canceledAt;
+    @JsonProperty("created_at") public OffsetDateTime createdAt;
+    @JsonProperty("processing_at") public OffsetDateTime processingAt;
+    @JsonProperty("succeeded_at") public OffsetDateTime succeededAt;
+    @JsonProperty("failed_at") public OffsetDateTime failedAt;
+    @JsonProperty("canceled_at") public OffsetDateTime canceledAt;
 }

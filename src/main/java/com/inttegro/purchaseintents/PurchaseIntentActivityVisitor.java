@@ -1,7 +1,6 @@
 package com.inttegro.purchaseintents;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
 public class PurchaseIntentActivityVisitor {
     @JsonProperty("session_id")
@@ -10,6 +9,8 @@ public class PurchaseIntentActivityVisitor {
     public String visitorId;
     @JsonProperty("user_agent")
     public String userAgent;
+    @JsonProperty("ip_address")
+    public String ipAddress;
     public String device;
     public String browser;
     public String os;

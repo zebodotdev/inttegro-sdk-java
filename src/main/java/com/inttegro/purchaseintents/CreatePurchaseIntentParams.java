@@ -1,5 +1,6 @@
 package com.inttegro.purchaseintents;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CreatePurchaseIntentParams {
@@ -12,7 +13,7 @@ public class CreatePurchaseIntentParams {
     public PurchaseIntentQuantity quantity;
     public PurchaseIntentUsage usage;
     @JsonProperty("expires_at")
-    public String expiresAt;
+    public OffsetDateTime expiresAt;
 
     public static Builder builder() { return new Builder(); }
 
@@ -24,7 +25,7 @@ public class CreatePurchaseIntentParams {
         public Builder priceId(String priceId) { params.priceId = priceId; return this; }
         public Builder quantity(PurchaseIntentQuantity quantity) { params.quantity = quantity; return this; }
         public Builder usage(PurchaseIntentUsage usage) { params.usage = usage; return this; }
-        public Builder expiresAt(String expiresAt) { params.expiresAt = expiresAt; return this; }
+        public Builder expiresAt(OffsetDateTime expiresAt) { params.expiresAt = expiresAt; return this; }
         public CreatePurchaseIntentParams build() { return params; }
     }
 }

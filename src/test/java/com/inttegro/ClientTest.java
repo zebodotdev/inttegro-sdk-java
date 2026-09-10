@@ -1,6 +1,8 @@
 package com.inttegro;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -19,6 +21,7 @@ import com.inttegro.orders.*;
 import com.inttegro.paymentmethods.MobileMoneyNetwork;
 import com.inttegro.prices.PriceParams;
 import com.inttegro.products.*;
+import com.inttegro.purchaseintents.*;
 import com.inttegro.refunds.*;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.OpenTelemetry;
@@ -36,6 +39,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -238,7 +242,7 @@ class ClientTest {
         assertEquals("transient_error", report.apiError().type());
         assertEquals("inttegro:java:orders.lookup:http_503:503", report.fingerprint());
         assertSame(report, exception.getReport());
-        String encoded = new ObjectMapper().writeValueAsString(report);
+        String encoded = mapper().writeValueAsString(report);
         assertFalse(encoded.contains("private provider detail"));
         assertFalse(encoded.contains("sk_live_must_not_appear"));
         assertFalse(encoded.contains("or_private"));
@@ -272,17 +276,37 @@ class ClientTest {
 
     @Test
     void balancesReturnsSnapshot() throws Exception {
-        server.createContext("/balances", new JsonHandler(200, "{\"balances\":{\"ghs\":{\"available\":{\"amount\":1000}}}}"));
+        server.createContext("/balances", new JsonHandler(200, "{\"balances\":{\"ghs\":{\"available\":{\"amount\":1000},\"pending\":{\"amount\":200},\"reserved\":{\"amount\":100},\"refund\":{\"amount\":50},\"includes_transactions_before\":\"2026-09-09T12:00:00Z\"}}}"));
         server.start();
 
         Client client = new Client("sk_test_123", baseUrl, null);
         var resp = client.balances().get();
-        assertEquals(1000L, resp.get("ghs").available.amount);
+        assertEquals(1000L, resp.ghs.available.amount);
+    }
+
+    @Test
+    void purchaseIntentExposesNestedResponseTypes() throws Exception {
+        String json = "{" +
+                "\"activity\":{\"recent\":[{\"created_at\":\"2026-09-09T12:01:00Z\",\"id\":\"saleevt_123\",\"purchase_intent_id\":\"sale_123\",\"type\":\"viewed\",\"visitor\":{\"ip_address\":\"203.0.113.7\"}}]}," +
+                "\"allow_variants\":false,\"created_at\":\"2026-09-09T12:00:00Z\",\"id\":\"sale_123\"," +
+                "\"merchant\":{\"organization_name\":\"Tea House Ltd\"}," +
+                "\"product\":{\"active\":true,\"created_at\":\"2026-09-09T11:00:00Z\",\"dimensions\":{\"digital\":{\"bytes\":1024}},\"id\":\"prod_123\",\"name\":\"Tea guide\",\"type\":\"digital\"}," +
+                "\"quantity\":{\"min\":1},\"status\":\"active\"," +
+                "\"usage\":{\"order\":{\"created_at\":\"2026-09-09T12:02:00Z\",\"id\":\"or_123\"},\"single_use\":true}}";
+
+        PurchaseIntent intent = mapper().readValue(json, PurchaseIntent.class);
+
+        assertEquals("203.0.113.7", intent.activity.recent.get(0).visitor.ipAddress);
+        assertEquals("Tea House Ltd", intent.merchant.organizationName);
+        assertEquals(1024.0, intent.product.dimensions.digital.bytes);
+        assertEquals("or_123", intent.usage.order.id);
+        assertEquals(PurchaseIntentStatus.ACTIVE, intent.status);
+        assertEquals(PurchaseIntentActivityType.VIEWED, intent.activity.recent.get(0).type);
     }
 
     @Test
     void balanceTransactionsDeserializeSemanticSourcesAndOrderEmbedding() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = mapper();
         BalanceTransaction payment = mapper.readValue(
                 "{\"id\":\"bt_payment\",\"type\":\"payment\",\"payment_id\":\"py_123\",\"order_id\":\"or_123\",\"amount\":{\"currency\":\"ghs\",\"value\":2500},\"created_at\":\"2026-08-31T12:00:00Z\"}",
                 BalanceTransaction.class
@@ -309,7 +333,7 @@ class ClientTest {
 
     @Test
     void createCatalogPriceSerializesNestedAmount() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = mapper();
         var params = com.inttegro.prices.CatalogPriceParams.builder()
                 .productId("prod_123")
                 .amount(AmountParams.of(Currency.GHS, 2500))
@@ -328,6 +352,10 @@ class ClientTest {
                 com.inttegro.prices.CatalogPrice.class
         );
         assertEquals("prod_123", catalogPrice.productId);
+        assertEquals(OffsetDateTime.parse("2026-09-02T12:00:00Z"), catalogPrice.createdAt);
+        UpdatePurchaseIntentParams updateIntent = new UpdatePurchaseIntentParams();
+        updateIntent.expiresAt = OffsetDateTime.parse("2026-10-01T12:00:00Z");
+        assertTrue(mapper.writeValueAsString(updateIntent).contains("\"expires_at\":\"2026-10-01T12:00:00Z\""));
         assertEquals("\"mtn\"", mapper.writeValueAsString(MobileMoneyNetwork.MTN));
     }
 
@@ -343,13 +371,11 @@ class ClientTest {
     }
 
     @Test
-    void refundsSupportCanonicalLifecycleAndOrderAliasParity() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
+    void refundsSupportCanonicalLifecycle() throws Exception {
+        ObjectMapper mapper = mapper();
         AtomicReference<String> canonicalBody = new AtomicReference<>();
-        AtomicReference<String> aliasBody = new AtomicReference<>();
         String refundBody = "{\"refund\":{\"id\":\"rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd\",\"order_id\":\"or_0123456789abcdefghijklmnopqrstuvwxyzABCD\",\"status\":\"pending\",\"total\":{\"currency\":\"ghs\",\"value\":2500},\"line_items\":[{\"id\":\"rli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN\",\"order_line_item_id\":\"oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN\",\"original_amount_paid\":{\"currency\":\"ghs\",\"value\":5000},\"refund_amount\":{\"currency\":\"ghs\",\"value\":2500}}],\"reason\":\"item_returned\",\"created_at\":\"2026-09-02T10:00:00Z\"}}";
         server.createContext("/refunds/create", exchange -> captureJson(exchange, canonicalBody, refundBody));
-        server.createContext("/orders/refund", exchange -> captureJson(exchange, aliasBody, refundBody));
         server.createContext("/refunds/cancel", new JsonHandler(200, refundBody.replace("\"pending\"", "\"canceled\"")));
         server.createContext("/refunds/lookup", new JsonHandler(200, refundBody));
         server.createContext("/refunds/page", new JsonHandler(200, "{\"page\":{\"number\":1,\"refunds\":[],\"size\":0}}"));
@@ -371,7 +397,6 @@ class ClientTest {
                 .build();
 
         Refund canonical = client.refunds().create(params);
-        Refund alias = client.orders().refund(params);
         Refund canceled = client.refunds().cancel("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
         Refund lookedUp = client.refunds().lookup("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd");
         RefundPage page = client.refunds().page(RefundPageParams.builder().pageNumber(1).build());
@@ -379,11 +404,9 @@ class ClientTest {
         assertEquals("rf_1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcd", canonical.id);
         assertEquals(RefundStatus.PENDING, canonical.status);
         assertEquals(2500L, canonical.total.value);
-        assertEquals(canonical.id, alias.id);
         assertEquals(RefundStatus.CANCELED, canceled.status);
         assertEquals(canonical.id, lookedUp.id);
         assertEquals(0, page.size);
-        assertEquals(mapper.readTree(canonicalBody.get()), mapper.readTree(aliasBody.get()));
         assertEquals("item_returned", mapper.readTree(canonicalBody.get()).get("reason").asText());
         assertEquals("oli_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN", mapper.readTree(canonicalBody.get()).get("line_items").get(0).get("order_line_item_id").asText());
     }
@@ -459,7 +482,7 @@ class ClientTest {
     @Test
     void mutatingPostsGenerateRequestMetaIdempotencyKey() throws Exception {
         AtomicReference<String> requestBody = new AtomicReference<>();
-        server.createContext("/orders/new", exchange -> {
+        server.createContext("/orders/create", exchange -> {
             requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             byte[] bytes = "{\"ok\":true}".getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -471,7 +494,7 @@ class ClientTest {
         server.start();
 
         Client client = new Client("sk_test_123", baseUrl, null);
-        client.request("POST", "/orders/new", Map.of("number", "ORDER-1", "idempotency_key", "legacy"), Map.class);
+        client.request("POST", "/orders/create", Map.of("number", "ORDER-1", "idempotency_key", "legacy"), Map.class);
 
         assertFalse(requestBody.get().contains("\"idempotency_key\":\"legacy\""));
         assertTrue(requestBody.get().contains("\"request_meta\""));
@@ -539,7 +562,7 @@ class ClientTest {
         SetDefaultUnitPriceParams setDefault = new SetDefaultUnitPriceParams();
         setDefault.productId = "prod_123";
         setDefault.priceId = "pr_123";
-        assertEquals("pr_123", client.products().setDefaultUnitPrice(setDefault).defaultUnitPrice.id);
+        assertEquals("prod_123", client.products().setDefaultUnitPrice(setDefault).id);
 
         assertEquals("prod_123", client.products().lookup("prod_123").id);
         assertEquals("prod_123", client.products().update(new UpdateProductParams()).id);
@@ -555,6 +578,12 @@ class ClientTest {
 
     private static class OkResponse {
         public boolean ok;
+    }
+
+    private static ObjectMapper mapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     private static void captureJson(HttpExchange exchange, AtomicReference<String> target, String responseBody) throws IOException {

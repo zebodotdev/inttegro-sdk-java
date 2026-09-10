@@ -1,12 +1,14 @@
 package com.inttegro.paymentmethods;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
-
 public class PaymentMethod {
     public String id;
+    public boolean active;
+    @JsonProperty("archived_at")
+    public OffsetDateTime archivedAt;
     @JsonProperty("customer_id")
     public String customerId;
     public PaymentMethodType type;
@@ -15,14 +17,16 @@ public class PaymentMethod {
     @JsonProperty("bank_account")
     public BankAccountSummary bankAccount;
     public CardSummary card;
+    public PaymentMethodOwner owner;
+    public PaymentMethodSupplied supplied;
     public VerificationMetadata verification;
     @JsonProperty("custom_data")
     public CustomData customData;
     @JsonProperty("expires_on")
-    public String expiresOn;
+    public OffsetDateTime expiresOn;
+    public Boolean ephemeral;
     @JsonProperty("created_at")
-    public String createdAt;
-    public boolean verified;
+    public OffsetDateTime createdAt;
     @JsonProperty("verified_at")
-    public String verifiedAt;
+    public OffsetDateTime verifiedAt;
 }

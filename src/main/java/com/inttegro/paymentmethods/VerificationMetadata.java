@@ -1,13 +1,14 @@
 package com.inttegro.paymentmethods;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 
 public class VerificationMetadata {
     @JsonProperty("completed_at")
-    public String completedAt;
+    public OffsetDateTime completedAt;
     @JsonProperty("initiated_at")
-    public String initiatedAt;
+    public OffsetDateTime initiatedAt;
     public String mechanism;
     @JsonProperty("request_id")
     public String requestId;

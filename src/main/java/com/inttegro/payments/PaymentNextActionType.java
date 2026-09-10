@@ -6,6 +6,6 @@ public enum PaymentNextActionType {
     @JsonProperty("confirm_payment") CONFIRM_PAYMENT,
     @JsonProperty("execute") EXECUTE,
     @JsonProperty("redirect") REDIRECT,
-    @JsonProperty("authorize") AUTHORIZE,
-    @JsonProperty("none") NONE
+    @JsonProperty("authorize_payment") AUTHORIZE_PAYMENT,
+    @JsonProperty("request_confirmation") REQUEST_CONFIRMATION
 }

@@ -5,5 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public enum LineItemType {
     @JsonProperty("product") PRODUCT,
     @JsonProperty("fee") FEE,
-    @JsonProperty("shipping") SHIPPING
+    @JsonProperty("shipping") SHIPPING,
+    @JsonProperty("discount") DISCOUNT
 }

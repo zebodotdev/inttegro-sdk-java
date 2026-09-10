@@ -1,14 +1,13 @@
 package com.inttegro.paymentmethods;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 
 public class PaymentMethodOwnerAddress {
     public String city;
     public String country;
-    @JsonProperty("line1")
+    @JsonProperty("line_1")
     public String line1;
-    @JsonProperty("line2")
+    @JsonProperty("line_2")
     public String line2;
     public String name;
     @JsonProperty("phone_number")

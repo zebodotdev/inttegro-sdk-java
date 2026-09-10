@@ -1,0 +1,14 @@
+package com.inttegro.payments;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public class PaymentAddress {
+    public String name;
+    @JsonProperty("phone_number") public String phoneNumber;
+    public String line1;
+    public String line2;
+    public String city;
+    public String region;
+    @JsonProperty("post_code") public String postCode;
+    public String country;
+}

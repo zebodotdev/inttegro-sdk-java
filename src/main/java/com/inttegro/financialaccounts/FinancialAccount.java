@@ -1,5 +1,6 @@
 package com.inttegro.financialaccounts;
 
+import java.time.OffsetDateTime;
 import com.inttegro.CustomData;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,9 +21,9 @@ public class FinancialAccount {
     @JsonProperty("bank_account") public BankAccountConfig bankAccount;
     @JsonProperty("dosh_account") public DoshAccount doshAccount;
     public FinancialAccountVerification verification;
-    @JsonProperty("archived_at") public String archivedAt;
-    @JsonProperty("disconnected_at") public String disconnectedAt;
-    @JsonProperty("created_at") public String createdAt;
+    @JsonProperty("archived_at") public OffsetDateTime archivedAt;
+    @JsonProperty("disconnected_at") public OffsetDateTime disconnectedAt;
+    @JsonProperty("created_at") public OffsetDateTime createdAt;
     @JsonProperty("custom_data") public CustomData customData;
     public BankAccountOwner owner;
 }

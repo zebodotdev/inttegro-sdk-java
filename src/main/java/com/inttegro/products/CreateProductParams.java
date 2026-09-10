@@ -14,7 +14,7 @@ public class CreateProductParams {
     public String about;
     @JsonProperty("tax_code")
     public String taxCode;
-    public ProductCategory category;
+    public String category;
     public ProductShipment shipment;
     public ProductDimensions dimensions;
     @JsonProperty("unit_dimension") public String unitDimension;
@@ -34,7 +34,7 @@ public class CreateProductParams {
         public Builder description(String description) { params.description = description; return this; }
         public Builder about(String about) { params.about = about; return this; }
         public Builder taxCode(String taxCode) { params.taxCode = taxCode; return this; }
-        public Builder category(ProductCategory category) { params.category = category; return this; }
+        public Builder category(String category) { params.category = category; return this; }
         public Builder shipment(ProductShipment shipment) { params.shipment = shipment; return this; }
         public Builder dimensions(ProductDimensions dimensions) { params.dimensions = dimensions; return this; }
         public Builder unitDimension(String unitDimension) { params.unitDimension = unitDimension; return this; }

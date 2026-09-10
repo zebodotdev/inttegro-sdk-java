@@ -1,5 +1,6 @@
 package com.inttegro.prices;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inttegro.money.Amount;
 import com.inttegro.products.Product;
@@ -15,9 +16,9 @@ public class CatalogPrice {
     public String productId;
     public Product product;
     @JsonProperty("created_at")
-    public String createdAt;
+    public OffsetDateTime createdAt;
     @JsonProperty("updated_at")
-    public String updatedAt;
+    public OffsetDateTime updatedAt;
     @JsonProperty("archived_at")
-    public String archivedAt;
+    public OffsetDateTime archivedAt;
 }

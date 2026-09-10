@@ -19,9 +19,9 @@ class SemanticCollectionsTest {
             "PayoutDestinations.java",
             "FileMetadata.java",
             "CountrySpecifications.java",
-            "BalanceSnapshot.java",
             "CustomerBalance.java",
-            "ProductDimensionDetails.java"
+            "ProductDimensionDetails.java",
+            "PurchaseIntentVariant.java"
     );
 
     @Test
