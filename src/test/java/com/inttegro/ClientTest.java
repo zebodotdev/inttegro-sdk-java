@@ -81,6 +81,38 @@ class ClientTest {
     }
 
     @Test
+    void responseEnvelopeExposesResponseOnlyMetadata() throws Exception {
+        server.createContext("/orders/create", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.getResponseHeaders().set("x-request-id", "req_123");
+            exchange.getResponseHeaders().set("Retry-After", "15");
+            byte[] response = ("{\"order\":{\"id\":\"or_123\"},"
+                    + "\"response_meta\":{\"request_id\":\"req_123\","
+                    + "\"debug\":{\"provider_attempts\":1}}}")
+                    .getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, response.length);
+            try (OutputStream output = exchange.getResponseBody()) {
+                output.write(response);
+            }
+        });
+        server.start();
+
+        Client client = new Client("sk_test_123", baseUrl, null);
+        ApiResponse<Order> response = client.orders().createWithResponse(
+                OrderCreateParams.builder()
+                        .customerId("cu_123")
+                        .lineItem(OrderLineItemParams.builder().type(LineItemType.PRODUCT).build())
+                        .build()
+        );
+
+        assertEquals("or_123", response.getData().id);
+        assertEquals(200, response.getStatusCode());
+        assertEquals("req_123", response.getRequestId());
+        assertEquals("15", response.getRetryAfter());
+        assertEquals("req_123", response.getMeta().get("request_id"));
+    }
+
+    @Test
     void requestReturnsApiError() throws Exception {
         server.createContext(
                 "/ping",

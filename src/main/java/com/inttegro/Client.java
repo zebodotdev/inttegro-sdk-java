@@ -342,6 +342,10 @@ public class Client {
      * Performs an HTTP request with optional JSON body.
      */
     <T> T request(String method, String path, Object body, Class<T> responseClass) throws IOException, InterruptedException, ApiException {
+        return requestWithResponse(method, path, body, responseClass).getData();
+    }
+
+    <T> ApiResponse<T> requestWithResponse(String method, String path, Object body, Class<T> responseClass) throws IOException, InterruptedException, ApiException {
         try (Telemetry.Request telemetryRequest = telemetry.start(method, path, null)) {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + path))
@@ -384,12 +388,13 @@ public class Client {
             }
 
             if (responseClass == null || response.body() == null || response.body().isEmpty()) {
-                return null;
+                return new ApiResponse<>(null, response.statusCode(), response.headers().map(), responseMeta(null));
             }
             try {
-                T decoded = mapper.readValue(response.body(), responseClass);
+                JsonNode parsed = mapper.readTree(response.body());
+                T decoded = mapper.treeToValue(parsed, responseClass);
                 telemetryRequest.decoded();
-                return decoded;
+                return new ApiResponse<>(decoded, response.statusCode(), response.headers().map(), responseMeta(parsed));
             } catch (JsonProcessingException exception) {
                 telemetryRequest.fail(exception, "decode_error");
                 throw exception;
@@ -454,6 +459,17 @@ public class Client {
             throws IOException, InterruptedException, ApiException {
         JsonNode envelope = request("POST", path, body, JsonNode.class);
         return decodeResource(envelope, field, resourceClass);
+    }
+
+    private <T> ApiResponse<T> requestResourceWithResponse(String path, Object body, String field, Class<T> resourceClass)
+            throws IOException, InterruptedException, ApiException {
+        ApiResponse<JsonNode> envelope = requestWithResponse("POST", path, body, JsonNode.class);
+        return new ApiResponse<>(
+                decodeResource(envelope.getData(), field, resourceClass),
+                envelope.getStatusCode(),
+                envelope.getHeaders(),
+                envelope.getMeta()
+        );
     }
 
     private <T> T requestResourceWithOptions(
@@ -645,6 +661,14 @@ public class Client {
 
     private String stringVal(Object o) {
         return o != null ? o.toString() : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> responseMeta(JsonNode parsed) {
+        if (parsed == null || !parsed.has("response_meta") || !parsed.get("response_meta").isObject()) {
+            return null;
+        }
+        return mapper.convertValue(parsed.get("response_meta"), Map.class);
     }
 
     private JsonNode multipartRequest(String pathOrUrl, Map<String, Object> fields, Map<String, Path> files, RequestOptions options, boolean authenticated) throws IOException, InterruptedException, ApiException {
@@ -1030,6 +1054,11 @@ public class Client {
             return requestOrder("/orders/create", params);
         }
 
+        public ApiResponse<Order> createWithResponse(OrderCreateParams params)
+                throws IOException, InterruptedException, ApiException {
+            return requestOrderWithResponse("/orders/create", params);
+        }
+
         /**
          * Retrieves details of an existing order by its ID (POST /orders/lookup).
          *
@@ -1229,6 +1258,11 @@ public class Client {
 
         private Order requestOrder(String path, Object params) throws IOException, InterruptedException, ApiException {
             return requestResource(path, params, "order", Order.class);
+        }
+
+        private ApiResponse<Order> requestOrderWithResponse(String path, Object params)
+                throws IOException, InterruptedException, ApiException {
+            return requestResourceWithResponse(path, params, "order", Order.class);
         }
 
         private <T> T requestResource(String path, Object params, String field, Class<T> resourceClass)
