@@ -1262,7 +1262,7 @@ public class Client {
 
         private ApiResponse<Order> requestOrderWithResponse(String path, Object params)
                 throws IOException, InterruptedException, ApiException {
-            return requestResourceWithResponse(path, params, "order", Order.class);
+            return client.requestResourceWithResponse(path, params, "order", Order.class);
         }
 
         private <T> T requestResource(String path, Object params, String field, Class<T> resourceClass)
