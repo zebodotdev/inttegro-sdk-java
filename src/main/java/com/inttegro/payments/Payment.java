@@ -30,4 +30,21 @@ public class Payment {
     @JsonProperty("paid_at") public OffsetDateTime paidAt;
     @JsonProperty("paid_offline") public Boolean paidOffline;
     @JsonProperty("failed_at") public OffsetDateTime failedAt;
+
+    /** Whether the payment completed successfully. */
+    public boolean isPaid() { return status == PaymentStatus.PAID; }
+
+    /** Whether the payment is waiting for customer or merchant action. */
+    public boolean requiresAction() { return status == PaymentStatus.REQUIRES_ACTION; }
+
+    /** Whether the payment has reached a final state. */
+    public boolean isTerminal() {
+        return status == PaymentStatus.PAID
+                || status == PaymentStatus.CANCELED
+                || status == PaymentStatus.EXPIRED
+                || status == PaymentStatus.FAILED;
+    }
+
+    /** Action details when the payment currently requires action. */
+    public PaymentNextAction requiredAction() { return requiresAction() ? nextAction : null; }
 }

@@ -24,4 +24,20 @@ public class PurchaseIntent {
     public PurchaseIntentUsage usage;
     @JsonProperty("variant_set")
     public PurchaseIntentVariantSet variantSet;
+
+    /** Whether the purchase intent is currently active. */
+    public boolean isActive() { return status == PurchaseIntentStatus.ACTIVE; }
+
+    /** Whether the purchase intent can create at most one order. */
+    public boolean isSingleUse() {
+        return usage != null && Boolean.TRUE.equals(usage.singleUse);
+    }
+
+    /** ID of the order that consumed a single-use purchase intent. */
+    public String usedOrderId() {
+        if (!isSingleUse() || usage.order == null || usage.order.id == null || usage.order.id.isEmpty()) {
+            return null;
+        }
+        return usage.order.id;
+    }
 }
