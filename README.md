@@ -1,6 +1,6 @@
 # Inttegro Java SDK
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/zebodotdev/inttegro-sdk-java/badge)](https://scorecard.dev/viewer/?uri=github.com/zebodotdev/inttegro-sdk-java)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/inttegro/inttegro-sdk-java/badge)](https://scorecard.dev/viewer/?uri=github.com/inttegro/inttegro-sdk-java)
 
 The official Java client for building server-side Inttegro integrations.
 
@@ -166,7 +166,7 @@ The GitHub release for each version is the canonical record. It contains the exa
 ```bash
 sha256sum --check SHA256SUMS
 gh attestation verify inttegro-sdk-java-5.1.0.jar \
-  --repo zebodotdev/inttegro-sdk-java
+  --repo inttegro/inttegro-sdk-java
 ```
 
 ## Develop

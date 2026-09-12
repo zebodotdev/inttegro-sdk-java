@@ -27,9 +27,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/zebodotdev/inttegro-sdk-java.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/zebodotdev/inttegro-sdk-java.git</developerConnection>
-        <url>https://github.com/zebodotdev/inttegro-sdk-java</url>
+        <connection>scm:git:https://github.com/inttegro/inttegro-sdk-java.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/inttegro/inttegro-sdk-java.git</developerConnection>
+        <url>https://github.com/inttegro/inttegro-sdk-java</url>
         <tag>HEAD</tag>
     </scm>
 
