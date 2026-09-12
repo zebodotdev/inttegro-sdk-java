@@ -2,7 +2,6 @@ package com.inttegro;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Decoded SDK value plus response-only HTTP metadata.
@@ -10,14 +9,18 @@ import java.util.Optional;
 public final class ApiResponse<T> {
     private final T data;
     private final int statusCode;
-    private final Map<String, List<String>> headers;
-    private final Map<String, Object> meta;
+    private final ResponseHeaders headers;
+    private final ResponseMeta meta;
 
-    public ApiResponse(T data, int statusCode, Map<String, List<String>> headers, Map<String, Object> meta) {
+    ApiResponse(T data, int statusCode, Map<String, List<String>> headers, Map<String, Object> meta) {
+        this(data, statusCode, ResponseHeaders.from(headers), ResponseMeta.from(meta));
+    }
+
+    public ApiResponse(T data, int statusCode, ResponseHeaders headers, ResponseMeta meta) {
         this.data = data;
         this.statusCode = statusCode;
-        this.headers = headers == null ? Map.of() : Map.copyOf(headers);
-        this.meta = meta == null ? null : Map.copyOf(meta);
+        this.headers = headers == null ? ResponseHeaders.empty() : headers;
+        this.meta = meta == null ? ResponseMeta.empty() : meta;
     }
 
     public T getData() {
@@ -28,26 +31,19 @@ public final class ApiResponse<T> {
         return statusCode;
     }
 
-    public Map<String, List<String>> getHeaders() {
+    public ResponseHeaders getHeaders() {
         return headers;
     }
 
-    public Map<String, Object> getMeta() {
+    public ResponseMeta getMeta() {
         return meta;
     }
 
     public String getRequestId() {
-        return firstHeader("x-request-id").orElse(null);
+        return headers.first("x-request-id");
     }
 
     public String getRetryAfter() {
-        return firstHeader("retry-after").orElse(null);
-    }
-
-    private Optional<String> firstHeader(String name) {
-        return headers.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(name))
-                .flatMap(entry -> entry.getValue().stream())
-                .findFirst();
+        return headers.first("retry-after");
     }
 }
